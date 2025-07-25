@@ -5,9 +5,10 @@
 """
 
 from .workflow_types import (
-    NodeType, NodeExecutor, DatabaseSearcher, ConditionChecker, ExecutionSummary
+    NodeType, BaseWorkflowConfig
 )
 from .engines import TreeWorkflowEngine
+from .engines.tree.types import TreeWorkflowConfig
 from .base import BaseWorkflowEngine
 
 __version__ = "1.0.0"
@@ -16,10 +17,7 @@ __author__ = "Workflow Engine Team"
 __all__ = [
     # 基础类型
     'NodeType',
-    'NodeExecutor',
-    'DatabaseSearcher', 
-    'ConditionChecker',
-    'ExecutionSummary',
+    'BaseWorkflowConfig',
     
     # 引擎类
     'BaseWorkflowEngine',
@@ -27,7 +25,7 @@ __all__ = [
 ]
 
 # 便利函数
-def create_tree_workflow(config: dict) -> TreeWorkflowEngine:
+def create_tree_workflow(config: TreeWorkflowConfig) -> TreeWorkflowEngine:
     """创建树形工作流引擎的便利函数"""
     return TreeWorkflowEngine(config)
 

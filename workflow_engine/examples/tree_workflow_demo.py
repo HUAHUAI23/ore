@@ -81,9 +81,9 @@ async def test_cycle_detection():
             "c": {"id": "c", "name": "节点C", "description": "节点C", "prompt": "C", "node_type": "leaf"}
         },
         "edges": [
-            {"from": "a", "to": "b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": False, "database_search_input": "prompt"}},
-            {"from": "b", "to": "c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-            {"from": "c", "to": "a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}  # 环路
+            {"from_node": "a", "to_node": "b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": False, "database_search_input": "prompt"}},
+            {"from_node": "b", "to_node": "c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+            {"from_node": "c", "to_node": "a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}  # 环路
         ]
     }
     

@@ -1,13 +1,15 @@
 """
 工作流引擎基础类型定义模块
 
-只包含所有工作流类型都需要的最基础类型：
+包含所有工作流类型都需要的基础类型：
 - NodeType: 基础节点类型枚举
 - 基础函数类型别名
+- 配置类型定义
 """
 
-from typing import Dict, List, Any, Callable, Awaitable
+from typing import Dict, Any, Callable, Optional, TypedDict, Coroutine, Awaitable
 from enum import Enum
+from dataclasses import dataclass
 
 class NodeType(Enum):
     """基础节点类型枚举"""
@@ -15,33 +17,27 @@ class NodeType(Enum):
     PROCESS = "process"
     LEAF = "leaf"
 
-# 基础函数类型别名
-NodeExecutor = Callable[[str, Dict[str, Any]], Awaitable[Any]]
-"""节点执行器函数类型"""
+class EventType(Enum):
+    """执行事件类型枚举"""
+    NODE_FAILED = "node_failed"
+    NODE_SUCCESS = "node_success"
 
-DatabaseSearcher = Callable[[str, str], Awaitable[str]]
-"""数据库检索器函数类型"""
+class LogEntry(TypedDict):
+    """执行日志条目类型"""
+    timestamp: float
+    event_type: str
+    data: Dict[str, Any]
 
-ConditionChecker = Callable[[str, str, Dict[str, Any]], bool]
-"""条件检查器函数类型"""
+# 基础配置类型定义
+class BaseWorkflowConfig(TypedDict):
+    """基础工作流配置类型
+    
+    所有工作流引擎都必须支持的基础配置字段
+    """
+    workflow_id: str
+    name: str
+    type: Optional[str]  # 工作流类型标识
+
+
 
 # 基础执行摘要
-class ExecutionSummary:
-    """基础执行摘要"""
-    def __init__(self, workflow_id: str, workflow_name: str, 
-                 completed_count: int, total_count: int, results: Dict[str, Any]):
-        self.workflow_id = workflow_id
-        self.workflow_name = workflow_name
-        self.completed_count = completed_count
-        self.total_count = total_count
-        self.results = results
-    
-    @property
-    def success_rate(self) -> float:
-        if self.total_count == 0:
-            return 0.0
-        return self.completed_count / self.total_count
-    
-    @property
-    def is_complete(self) -> bool:
-        return self.completed_count == self.total_count 

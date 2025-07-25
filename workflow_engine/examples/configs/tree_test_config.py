@@ -18,12 +18,12 @@ MULTI_START_CONFIG = {
         "output2": {"id": "output2", "name": "输出2", "description": "最终输出2", "prompt": "生成输出2", "node_type": "leaf", "database_connection": "db_output"}
     },
     "edges": [
-        {"from": "start1", "to": "process_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
-        {"from": "start2", "to": "process_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
-        {"from": "process_a", "to": "merge", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "process_b", "to": "merge", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "merge", "to": "output1", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "merge", "to": "output2", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": True, "database_search_input": "prompt_and_previous"}}
+        {"from_node": "start1", "to_node": "process_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
+        {"from_node": "start2", "to_node": "process_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
+        {"from_node": "process_a", "to_node": "merge", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "process_b", "to_node": "merge", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "merge", "to_node": "output1", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "merge", "to_node": "output2", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": True, "database_search_input": "prompt_and_previous"}}
     ]
 }
 
@@ -37,8 +37,8 @@ SIMPLE_CONFIG = {
         "output": {"id": "output", "name": "输出", "description": "输出节点", "prompt": "生成输出", "node_type": "leaf"}
     },
     "edges": [
-        {"from": "start", "to": "process", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "process", "to": "output", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}
+        {"from_node": "start", "to_node": "process", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "process", "to_node": "output", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}
     ]
 }
 
@@ -57,13 +57,13 @@ COMPLEX_BRANCH_CONFIG = {
         "final_c": {"id": "final_c", "name": "结果C", "description": "最终结果C", "prompt": "生成结果C", "node_type": "leaf"}
     },
     "edges": [
-        {"from": "start", "to": "analyze", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
-        {"from": "analyze", "to": "branch_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "analyze", "to": "branch_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "analyze", "to": "branch_c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "branch_a", "to": "final_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "branch_b", "to": "final_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
-        {"from": "branch_c", "to": "final_c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}
+        {"from_node": "start", "to_node": "analyze", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": False, "include_database_search": True, "database_search_input": "prompt"}},
+        {"from_node": "analyze", "to_node": "branch_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "analyze", "to_node": "branch_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "analyze", "to_node": "branch_c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "branch_a", "to_node": "final_a", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "branch_b", "to_node": "final_b", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}},
+        {"from_node": "branch_c", "to_node": "final_c", "condition": "true", "input_config": {"include_prompt": True, "include_previous_output": True, "include_database_search": False, "database_search_input": "prompt"}}
     ]
 }
 

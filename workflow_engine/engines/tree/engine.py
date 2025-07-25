@@ -26,11 +26,11 @@ except ImportError as e:
     print("请安装依赖: pip install langchain-openai python-dotenv")
 
 from ...base.engine import BaseWorkflowEngine
-from ...workflow_types import NodeType, ExecutionSummary, NodeExecutor
+from ...workflow_types import NodeType
 from .types import (
-    TreeNode, TreeEdge, TreeInputConfig, DatabaseSearchInput,
-    TreeExecutionStats, TreeExecutionSummary, TreeExecutionStrategy,
-    TreeCycleError
+    TreeNode, TreeEdge, 
+     ExecutionSummary,
+    TreeCycleError, TreeWorkflowConfig, NodeExecutor
 )
 
 class TreeWorkflowEngine(BaseWorkflowEngine):
@@ -43,17 +43,20 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
     4. 多分叉输出支持
     5. 支持多个start节点
     """
+    node_executor: NodeExecutor
+    nodes: Dict[str, TreeNode]
+    edges: List[TreeEdge]
+    outgoing_edges: Dict[str, List[TreeEdge]]
+
     
-    def __init__(self, workflow_config: Dict[str, Any], node_executor: Optional[NodeExecutor] = None) -> None:
+    def __init__(self, workflow_config: TreeWorkflowConfig) -> None:
         """初始化树形工作流引擎"""
         super().__init__(workflow_config)
-        if node_executor:
-            self.set_node_executor(node_executor)
-        
+        self.node_executor:NodeExecutor = self._default_node_executor
         # 初始化LLM客户端
         self._init_llm_client()
     
-    def _initialize_from_config(self, config: Dict[str, Any]) -> None:
+    def _initialize_from_config(self, config: TreeWorkflowConfig) -> None:
         """从配置初始化树形引擎"""
         # 解析节点和边
         self.nodes: Dict[str, TreeNode] = {
@@ -148,7 +151,7 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         
         return False
     
-    async def execute_workflow(self) -> TreeExecutionSummary:
+    async def execute_workflow(self) -> ExecutionSummary:
         """执行树形工作流"""
         print(f"🚀 执行工作流: {self.workflow_name} ({self.workflow_id})")
         
@@ -173,7 +176,7 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         print("✅ 工作流执行完成！")
         
         # 生成执行摘要
-        base_summary = ExecutionSummary(
+        execution_summary = ExecutionSummary(
             workflow_id=self.workflow_id,
             workflow_name=self.workflow_name,
             completed_count=len(self.completed_nodes),
@@ -181,13 +184,9 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             results=self.node_results
         )
         
-        return TreeExecutionSummary(
-            base_summary=base_summary,
-            stats=TreeExecutionStats(),
-            execution_strategy=TreeExecutionStrategy.EVENT_DRIVEN
-        )
-    
-    async def _run_execution_loop(self):
+        return execution_summary
+
+    async def _run_execution_loop(self) -> None:
         """运行事件驱动的执行循环"""
         while self.running_tasks:
             completed_task_ids = []
@@ -211,7 +210,7 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             if self.running_tasks:
                 await asyncio.sleep(0.1)
     
-    async def _try_trigger_next_nodes(self, completed_node_id: str):
+    async def _try_trigger_next_nodes(self, completed_node_id: str) -> None:
         """尝试触发后续节点"""
         outgoing_edges = self.outgoing_edges.get(completed_node_id, [])
         
@@ -219,9 +218,9 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             target_node_id = edge.to_node
             
             # 检查条件是否满足
-            if not self.condition_checker(edge.condition, completed_node_id, self.node_results):
+            if not self.condition_checker(edge.condition, self.node_results[completed_node_id]):
                 continue
-                
+
             # 检查是否所有前驱节点都已完成
             if not self._check_all_prerequisites_completed(target_node_id):
                 print(f"⏳ 节点 {self.nodes[target_node_id].name} 等待前驱节点完成")
@@ -274,19 +273,6 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             # TODO: 如果没获取到 all_predecessors 需要报错
             if all_predecessors:
                 input_data['previous_output'] = self._combine_predecessor_outputs(all_predecessors)
-        
-        # 3. 数据库检索
-        if input_config.include_database_search:
-            if node.database_connection:
-                search_input = self._prepare_database_search_input(
-                    input_config.database_search_input,
-                    input_data.get('prompt', ''),
-                    input_data.get('previous_output', '')
-                )
-                input_data['database_search'] = {
-                    'connection': node.database_connection,
-                    'search_input': search_input
-                }
         
         return input_data
 
@@ -342,23 +328,6 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         
         return " | ".join(combined_parts)
     
-    def _prepare_database_search_input(self, search_type: DatabaseSearchInput, 
-                                     prompt: str, previous_output: str) -> str:
-        """准备数据库检索的输入内容"""
-        if search_type == DatabaseSearchInput.PROMPT:
-            return prompt
-        elif search_type == DatabaseSearchInput.PREVIOUS_OUTPUT:
-            return str(previous_output)
-        elif search_type == DatabaseSearchInput.PROMPT_AND_PREVIOUS:
-            parts = []
-            if prompt:
-                parts.append(f"指令: {prompt}")
-            if previous_output:
-                parts.append(f"上下文: {previous_output}")
-            return " | ".join(parts)
-        else:
-            return prompt
-    
     async def _default_node_executor(self, node_id: str, input_data: Dict[str, Any]) -> Any:
         """默认节点执行器"""
         node = self.nodes[node_id]
@@ -376,16 +345,18 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         if 'previous_output' in input_data:
             input_parts.append(f"PREV: {input_data['previous_output']}")
         
-        if 'database_search' in input_data:
-            db_result = await self.database_searcher(
-                input_data['database_search']['connection'],
-                input_data['database_search']['search_input']
-            )
-            input_parts.append(f"DB: {db_result}")
-        
         # 调用处理函数
         full_input = " | ".join(input_parts)
         return await self._mock_llm_call(node_id, full_input)
+    
+    def condition_checker(self, condition: str, result: Any) -> bool:
+        """条件检查器"""
+        if condition == "true":
+            return True
+        try:
+            return eval(condition, {"__builtins__": {}}, {"result": result})
+        except Exception:
+            return False
     
     async def _mock_llm_call(self, node_id: str, input_text: str) -> str:
         """智能LLM调用 - 支持真实OpenAI调用和模拟调用"""
@@ -448,11 +419,6 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         else:
             return f"{node_name}处理结果: 基于'{input_text[:30]}...' 生成的中间输出"
     
-    async def _default_database_searcher(self, connection: str, search_input: str) -> str:
-        """默认数据库检索器"""
-        print(f"   🔍 DB查询: {connection}")
-        await asyncio.sleep(0.2)
-        return f"DB_RESULT_{connection}"
     
     def _mark_node_completed(self, node_id: str, result: Any) -> None:
         """重写以提供树形特有的日志"""

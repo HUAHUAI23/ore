@@ -10,9 +10,8 @@ from .types import (
     TreeEdge,
     TreeInputConfig,
     DatabaseSearchInput,
-    TreeExecutionStrategy,
     TreeExecutionStats,
-    TreeExecutionSummary,
+    ExecutionSummary,
     TreeEngineError,
     TreeCycleError
 )
@@ -23,9 +22,8 @@ __all__ = [
     'TreeEdge', 
     'TreeInputConfig',
     'DatabaseSearchInput',
-    'TreeExecutionStrategy',
     'TreeExecutionStats',
-    'TreeExecutionSummary',
+    'ExecutionSummary',
     'TreeEngineError',
     'TreeCycleError'
 ] 
