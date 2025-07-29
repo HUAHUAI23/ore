@@ -13,9 +13,9 @@ from dataclasses import dataclass
 
 class NodeType(Enum):
     """基础节点类型枚举"""
-    START = "start"
-    PROCESS = "process"
-    LEAF = "leaf"
+    START = "START"
+    INTERMEDIATE = "INTERMEDIATE"
+    LEAF = "LEAF"
 
 class EventType(Enum):
     """执行事件类型枚举"""
@@ -35,7 +35,9 @@ class BaseWorkflowConfig(TypedDict):
     所有工作流引擎都必须支持的基础配置字段
     """
     workflow_id: str
-    name: str
+    workflow_name: str  # 工作流显示名称
+    description: str    # 工作流描述
+    version: str        # 工作流版本
     type: Optional[str]  # 工作流类型标识
 
 
