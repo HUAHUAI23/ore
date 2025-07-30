@@ -1,0 +1,51 @@
+import { useAuthStore } from '@/store/auth'
+import type { User } from '@/types/auth'
+
+interface AuthGuardProps {
+  children: React.ReactNode
+  // 预留权限控制参数
+  requiredPermissions?: string[]
+  requiredRoles?: string[]
+  fallback?: React.ReactNode
+}
+
+export function AuthGuard({
+  children,
+  requiredPermissions,
+  requiredRoles,
+  fallback
+}: AuthGuardProps) {
+  const { user } = useAuthStore()
+
+  // 基础认证检查已在路由层处理，这里只需要权限检查
+  // 目前暂未实现权限系统，直接返回 children
+
+  // TODO: 实现权限检查逻辑
+  // if (requiredPermissions && !hasPermissions(user, requiredPermissions)) {
+  //   return fallback || <div>权限不足</div>
+  // }
+
+  // if (requiredRoles && !hasRoles(user, requiredRoles)) {
+  //   return fallback || <div>角色权限不足</div>
+  // }
+
+  return <>{children}</>
+}
+
+// TODO: 实现权限检查辅助函数
+// function hasPermissions(user: User | null, permissions: string[]): boolean {
+//   if (!user) return false
+//   // 实现权限检查逻辑
+//   return true
+// }
+
+// function hasRoles(user: User | null, roles: string[]): boolean {
+//   if (!user) return false
+//   // 实现角色检查逻辑
+//   return true
+// }
+
+// 示例
+{/* <AuthGuard requiredPermissions={['user:read']} requiredRoles={['admin']}>
+<AdminPanel />
+</AuthGuard> */}

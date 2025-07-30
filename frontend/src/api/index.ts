@@ -99,7 +99,7 @@ apiClient.interceptors.response.use(
     // 处理401未授权错误
     if (status === 401) {
       useAuthStore.getState().logout();
-      window.location.href = "/login";
+      window.location.href = "/auth";
     }
 
     // 转换为自定义API错误对象
