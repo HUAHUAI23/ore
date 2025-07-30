@@ -4,188 +4,207 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ORE is a modern AI workflow engine that integrates LangChain 0.3 with FastAPI, providing enterprise-grade solutions for AI-powered workflow orchestration. The project consists of two main components:
+ORE is an AI workflow engine and web backend that integrates LangChain and FastAPI to provide enterprise-grade AI application solutions. It consists of:
 
-1. **Workflow Engine** (`workflow_engine/`) - Tree-based workflow execution engine with LangChain integration
-2. **Web Backend** (`backend/`) - FastAPI-based REST API service with JWT authentication
+- **Backend**: FastAPI-based REST API server with JWT authentication and modern security
+- **Frontend**: React + TypeScript SPA with TanStack Router, React Query, and Tailwind CSS
+- **Workflow Engine**: Pluggable AI workflow system supporting tree, DAG, and graph execution patterns
+- **Multi-language support**: i18next for internationalization
 
 ## Development Commands
 
-### Environment Setup
-```bash
-# Install dependencies
-pip install -e .
+### Backend Development
 
-# Install development dependencies
+```bash
+# Start development server
+workflow-server
+# or
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+
+# Start server with custom options
+workflow-server --host 0.0.0.0 --port 8000 --reload --env development
+
+# Install project in development mode
 pip install -e ".[dev,test]"
 
-# Install all optional dependencies
-pip install -e ".[dev,test,prod,docs]"
+# Run tests
+pytest
+pytest backend/tests/test_auth.py  # specific test file
+pytest --cov=backend --cov-report=html  # with coverage
+
+# Code quality
+black .                # format code
+isort .               # sort imports  
+mypy .                # type checking
+ruff check .          # linting
+pre-commit run --all-files  # run all hooks
 ```
 
-### Running the Application
+### Frontend Development
 
-#### Web Server
 ```bash
-# Start development server (auto-reload enabled)
-workflow-server --reload
+# Navigate to frontend directory first
+cd frontend
 
-# Start production server
-workflow-server --workers 4
+# Start development server
+bun run dev
+# or
+bun run start
 
-# Direct uvicorn command
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+# Build for production
+bun run build
+
+# Run tests
+bun run test
+
+# Linting and formatting
+bun run lint          # check linting
+bun run lint:fix      # auto-fix linting issues
+bun run format        # format code
+bun run format:check  # check formatting
+bun run check         # run both lint and format checks
+bun run fix           # fix both lint and format issues
 ```
 
-#### Workflow Engine
+### Workflow Engine
+
 ```bash
 # Run workflow engine CLI
 workflow-engine
 
-# Run example workflow
+# Run example workflows
 python -m workflow_engine.examples.tree_workflow
-```
-
-### Development Tools
-```bash
-# Code formatting
-black .
-isort .
-
-# Static analysis
-mypy .
-ruff check .
-
-# Testing
-pytest
-pytest backend/tests/test_auth.py  # Run specific test file
-pytest --cov=backend --cov-report=html  # With coverage
 ```
 
 ## Architecture Overview
 
-### Workflow Engine Architecture
+### Backend Architecture (`backend/`)
 
-The workflow engine is built on a modular, extensible architecture:
+- **FastAPI Application**: Modern async web framework with automatic OpenAPI docs
+- **Authentication**: JWT-based auth with Argon2 password hashing (`backend/core/auth.py`)
+- **Database**: SQLModel + SQLAlchemy with async support, PostgreSQL/SQLite compatibility
+- **API Structure**: Versioned REST API under `/api/v1/` prefix
+- **Configuration**: Pydantic Settings with environment variable support
+- **Error Handling**: Centralized exception handlers with consistent response format
 
-- **Base Engine** (`workflow_engine/base/engine.py`): Abstract base class defining common workflow execution patterns
-- **Tree Engine** (`workflow_engine/engines/tree/`): Concrete implementation for tree-structured workflows
-- **Type System** (`workflow_engine/workflow_types.py`): Core type definitions shared across all engines
+Key files:
+- `backend/main.py`: FastAPI app initialization and middleware setup
+- `backend/cli.py`: Command-line server launcher
+- `backend/api/v1/`: API route definitions
+- `backend/core/`: Core configuration and security
+- `backend/services/`: Business logic layer
 
-#### Key Workflow Engine Concepts
+### Frontend Architecture (`frontend/`)
 
-1. **Node Types**: START, INTERMEDIATE, LEAF
-2. **Execution Flow**: Event-driven execution with dependency checking
-3. **LLM Integration**: Uses LangChain 0.3 with ChatPromptTemplate for variable substitution
-4. **Parallel Execution**: Supports multiple start nodes and concurrent execution
-5. **Cycle Detection**: Automatic cycle detection during graph construction
+- **React 19** with TypeScript for type safety
+- **TanStack Router**: File-based routing with type-safe navigation
+- **TanStack Query**: Server state management and caching
+- **Zustand**: Client-side state management
+- **Tailwind CSS v4**: Utility-first styling with shadcn/ui components
+- **Vite**: Build tool with HMR and code splitting
+- **i18next**: Internationalization with language detection
 
-### Backend API Architecture
+Key files:
+- `frontend/src/main.tsx`: App entry point with providers
+- `frontend/src/routes/`: File-based route definitions
+- `frontend/src/api/`: API client and service layer
+- `frontend/src/store/`: Zustand state stores
+- `frontend/src/components/`: Reusable UI components
 
-FastAPI-based REST API with modern Python practices:
+### Workflow Engine (`workflow_engine/`)
 
-- **Layered Architecture**: API → Services → Models
-- **Authentication**: JWT-based with Argon2 password hashing
-- **Configuration**: Pydantic settings management
-- **Exception Handling**: Centralized error handling with custom exceptions
-- **CORS Support**: Configurable cross-origin resource sharing
+Pluggable architecture supporting multiple execution patterns:
+- **Base Engine** (`workflow_engine/base/engine.py`): Abstract base class for all engines
+- **Tree Engine** (`workflow_engine/engines/tree/`): Hierarchical workflow execution
+- **Configuration-driven**: JSON/YAML workflow definitions
+- **Async Execution**: Built on asyncio for high performance
 
-## Configuration
+## Key Configuration Files
 
-### Environment Variables
+- `pyproject.toml`: Python project configuration with dependencies and tool settings
+- `frontend/package.json`: Node.js dependencies and scripts
+- `frontend/vite.config.ts`: Vite build configuration with path aliases
+- `frontend/tsconfig.json`: TypeScript compiler options
+- `.env`: Environment variables (copy from `.env.example`)
 
-Essential environment variables (see `.env.example`):
+## API Documentation
 
-```bash
-# AI Service Configuration
-OPENAI_API_KEY=your_openai_api_key
-ANTHROPIC_API_KEY=your_anthropic_api_key  # Alternative provider
+When the development server is running, API documentation is available at:
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
 
-# Database
-DATABASE_URL=sqlite:///./app.db
+See `docs/API_GUIDE.md` for comprehensive API usage examples and client code.
 
-# Security
-SECRET_KEY=your-secret-key  # Auto-generated if not provided
+## Database Schema
 
-# Application
-APP_ENV=development
-LOG_LEVEL=INFO
-```
+The project uses SQLModel for ORM with these key models:
+- `backend/models/user.py`: User account management
+- Database migrations handled by Alembic (configured in `backend/db/`)
 
-### Workflow Configuration
+## Testing Strategy
 
-Workflow settings are managed in `config/workflow_config.py`:
+- **Backend**: pytest with async support, coverage reporting
+- **Frontend**: Vitest with jsdom environment, React Testing Library
+- Test files located in `backend/tests/` and frontend uses `.test.ts` suffixes
 
-- LLM provider selection (OpenAI, Anthropic, custom)
-- Model parameters (temperature, max_tokens)
-- Execution settings
+## Environment Setup
 
-## Code Patterns and Conventions
+1. **Backend setup**:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # Linux/Mac
+   pip install -e ".[dev,test]"
+   ```
 
-### Workflow Engine Development
+2. **Frontend setup**:
+   ```bash
+   cd frontend
+   bun install
+   ```
 
-When extending the workflow engine:
+3. **Environment variables**:
+   - Copy `.env.example` to `.env` and configure API keys
+   - Frontend env files: `.env.development`, `.env.template`
 
-1. **Inherit from BaseWorkflowEngine**: All workflow engines must extend the base class
-2. **Implement Required Methods**: `_initialize_from_config()` and `execute_workflow()`
-3. **Use Event-Driven Patterns**: Leverage the async execution loop for node orchestration
-4. **LangChain Integration**: Use ChatPromptTemplate with input_variables for dynamic content
+## Common Development Patterns
 
-### API Development
+### Adding New API Endpoints
 
-When adding new API endpoints:
+1. Create route in `backend/api/v1/`
+2. Define Pydantic schemas in `backend/schemas/`
+3. Implement business logic in `backend/services/`
+4. Register router in `backend/main.py`
 
-1. **Follow REST Conventions**: Use appropriate HTTP methods and status codes
-2. **Pydantic Schemas**: Define request/response models in `backend/schemas/`
-3. **Dependency Injection**: Use FastAPI's dependency system for auth and services
-4. **Error Handling**: Raise appropriate custom exceptions for business logic errors
+### Frontend Component Development
 
-### Testing Patterns
+- Use shadcn/ui components from `@/components/ui/`
+- Store API calls in `@/api/` with TanStack Query hooks
+- Manage state with Zustand stores in `@/store/`
+- Add routes as files in `@/routes/` (auto-generated routing)
 
-- **Async Testing**: Use `pytest-asyncio` for testing async workflow functions
-- **API Testing**: Use `httpx` for FastAPI endpoint testing
-- **Mocking**: Mock LLM calls during testing to avoid API costs
+### Workflow Engine Extensions
 
-## Important File Locations
+- Implement `BaseWorkflowEngine` interface
+- Register new engines in `workflow_engine/engines/__init__.py`
+- Add configuration schemas to `workflow_engine/workflow_types.py`
 
-- **Main Application**: `backend/main.py` - FastAPI app initialization
-- **CLI Entry**: `backend/cli.py` - Command-line server startup
-- **Workflow Base**: `workflow_engine/base/engine.py` - Core workflow abstractions
-- **Tree Engine**: `workflow_engine/engines/tree/engine.py` - Main workflow implementation
-- **Configuration**: `config/` - Centralized settings management
-- **Project Config**: `pyproject.toml` - Dependencies and tool configurations
+## Code Style and Quality
 
-## Security Considerations
+- **Python**: Black (88 char), isort, mypy, ruff
+- **Frontend**: ESLint, Prettier, TypeScript strict mode
+- **Commit hooks**: pre-commit configured for automated checks
+- **Import sorting**: Absolute imports preferred, path aliases with `@/`
 
-- **Password Hashing**: Uses Argon2 for secure password storage
-- **JWT Tokens**: Cryptographically signed authentication tokens
-- **Environment Secrets**: Never commit API keys or secrets to version control
-- **Input Validation**: All API inputs validated through Pydantic schemas
+## Authentication Flow
 
-## Performance Notes
+1. User registers/logs in via `/api/v1/auth/register` or `/api/v1/auth/login`
+2. Server returns JWT access token
+3. Frontend stores token and includes in Authorization header
+4. Protected routes require valid JWT token
 
-- **Async Execution**: Workflow engine uses asyncio for concurrent node execution
-- **LLM Caching**: Consider implementing response caching for repeated prompts
-- **Database Optimization**: Use connection pooling in production environments
-- **Resource Monitoring**: Monitor LLM API usage and costs
+## Internationalization
 
-## Troubleshooting
-
-### Common Issues
-
-1. **LLM API Failures**: Check API keys and network connectivity; engine provides graceful fallback
-2. **Workflow Cycles**: Tree engine automatically detects and prevents cycles during construction
-3. **Dependency Issues**: Ensure all prerequisite nodes complete before dependent nodes execute
-4. **Port Conflicts**: Default server port is 8000; use `--port` flag to change
-
-### Debug Mode
-
-Enable debug mode for development:
-```bash
-export APP_ENV=development
-```
-
-This enables:
-- FastAPI docs at `/docs` and `/redoc`
-- Detailed error messages
-- Auto-reload functionality
+- Backend: Uses English for API responses and logging
+- Frontend: i18next with JSON translation files in `public/locales/`
+- Supported languages: English (en), Chinese (zh)
+- Language detection via browser settings and localStorage

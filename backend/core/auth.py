@@ -40,7 +40,7 @@ def create_user_from_token_claims(payload: dict) -> User:
         )
 
 
-async def get_current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> User:
     """
@@ -81,7 +81,7 @@ async def get_current_user(
         )
 
 
-async def get_current_user_optional(
+def get_current_user_optional(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
         HTTPBearer(auto_error=False)
     ),

@@ -71,7 +71,7 @@ async def register(user_data: UserCreateRequest, session: SessionDep):
 
 
 @router.get("/me", response_model=ApiResponse[UserResponse])
-async def get_current_user_info(current_user: User = Depends(get_current_user)):
+def get_current_user_info(current_user: User = Depends(get_current_user)):
     """获取当前用户信息"""
     user_response = UserResponse.model_validate(current_user)
     return ApiResponse(data=user_response)

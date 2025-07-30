@@ -3,7 +3,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 import time
-
 from backend.core.config import settings
 from backend.utils.logger import get_logger
 from backend.utils.exceptions import (
