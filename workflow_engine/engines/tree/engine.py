@@ -83,6 +83,9 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         """
         super().__init__(workflow_config)
 
+        self.skipped_nodes: Set[str] = set()
+        self.execution_error: Optional[str] = None
+
         # 初始化LLM
         self._initialize_llm()
 
@@ -282,26 +285,36 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             except Exception as e:
                 print(f"⚠️ 执行开始回调失败: {e}")
 
-        # 启动所有起始节点
-        for start_node_id in start_nodes:
-            result = await self.node_executor(start_node_id, NodeInputData())
-            self._mark_node_completed(start_node_id, result)
-            # 调用节点完成的外部回调
-            await self._call_node_completed_callback(start_node_id, result)
-            await self._try_trigger_next_nodes(start_node_id)
+        try:
+            # 启动所有起始节点
+            for start_node_id in start_nodes:
+                result = await self.node_executor(start_node_id, NodeInputData())
+                self._mark_node_completed(start_node_id, result)
+                # 调用节点完成的外部回调
+                await self._call_node_completed_callback(start_node_id, result)
+                await self._try_trigger_next_nodes(start_node_id)
 
-        # 事件驱动循环
-        await self._run_execution_loop()
+            # 事件驱动循环
+            await self._run_execution_loop()
 
-        print("✅ 工作流执行完成！")
+            print("✅ 工作流执行完成！")
+
+        except Exception as e:
+            # 记录整体执行错误
+            self.execution_error = str(e)
+            print(f"❌ 工作流执行失败: {e}")
+            raise
 
         # 生成执行摘要
         execution_summary = ExecutionSummary(
             workflow_id=self.workflow_id,
             workflow_name=self.workflow_name,
             completed_count=len(self.completed_nodes),
+            failed_count=len(self.failed_nodes),
+            skipped_count=len(self.skipped_nodes),
             total_count=len(self.nodes),
             results=self.node_results,
+            error_message=self.execution_error,
         )
 
         # 调用执行完成回调
@@ -342,10 +355,14 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             # 清理已完成的任务并触发后续节点
             for node_id in completed_task_ids:
                 del self.running_tasks[node_id]
+                # 即使节点失败，也尝试触发后续节点（如果有条件的话）
                 await self._try_trigger_next_nodes(node_id)
 
             # 短暂休眠避免忙等待
             if self.running_tasks:
+                # 根据任务数量动态调整
+                # sleep_time = min(0.1, max(0.01, 0.1 / len(self.running_tasks)))
+                # await asyncio.sleep(sleep_time)
                 await asyncio.sleep(0.1)
 
     async def _try_trigger_next_nodes(self, completed_node_id: str) -> None:
@@ -366,6 +383,12 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
                     edge.condition, self.node_results[completed_node_id]
                 ):
                     node_name = self.nodes[target_node_id].name
+                    condition_desc = (
+                        f"{edge.condition.match_type}:{edge.condition.match_value}"
+                    )
+                    self._mark_node_skipped(
+                        target_node_id, f"条件不满足 ({condition_desc})"
+                    )
                     print(f"🚫 条件不满足，跳过节点: {node_name}")
                     continue
 
@@ -373,6 +396,8 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             if (
                 target_node_id in self.running_tasks
                 or target_node_id in self.completed_nodes
+                or target_node_id in self.failed_nodes
+                or target_node_id in self.skipped_nodes
             ):
                 continue
 
@@ -587,3 +612,9 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         node = self.nodes[node_id]
         print(f"❌ 节点失败: {node.name}")
         print(f"   错误: {error}")
+
+    def _mark_node_skipped(self, node_id: str, reason: str) -> None:
+        """标记节点被跳过"""
+        self.skipped_nodes.add(node_id)
+        node = self.nodes[node_id]
+        print(f"⏭️ 节点跳过: {node.name} - {reason}")
