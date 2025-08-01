@@ -35,8 +35,10 @@ dependencies = [
     "fastapi[standard]>=0.116.1", 
     
     # 数据库ORM
-    "sqlmodel>=0.0.22",              # SQLModel for database ORM
-    "sqlalchemy[asyncio]>=2.0.0",   # Async SQLAlchemy support
+    "sqlmodel>=0.0.24",              # SQLModel for database ORM
+    "sqlalchemy[asyncio]>=2.0.36",   # Async SQLAlchemy support
+    "pydantic>=2.10.0",
+    # 数据库驱动
     "psycopg2-binary>=2.9.9",       # PostgreSQL adapter (sync)
     "asyncpg>=0.29.0",               # Async PostgreSQL adapter
     "alembic>=1.13.0",               # Database migrations
@@ -73,6 +75,8 @@ test = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "httpx>=0.25.0",
+    "fastapi[testing]>=0.116.1",
+    "sqlalchemy-utils>=0.41.0",
 ]
 
 # 生产部署依赖

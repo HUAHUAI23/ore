@@ -24,7 +24,6 @@ from .user import (
 from .common import (
     ApiResponse,
     ErrorResponse,
-    PaginationMeta,
     PaginatedResponse,
     HealthCheck,
 )
@@ -32,7 +31,7 @@ from .common import (
 __all__ = [
     # Auth schemas
     "UserLoginRequest",
-    "TokenResponse", 
+    "TokenResponse",
     "RefreshTokenRequest",
     "PasswordChangeRequest",
     # User schemas
@@ -42,7 +41,6 @@ __all__ = [
     # Common schemas
     "ApiResponse",
     "ErrorResponse",
-    "PaginationMeta",
     "PaginatedResponse",
     "HealthCheck",
 ]

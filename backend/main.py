@@ -13,7 +13,7 @@ from backend.utils.exceptions import (
     general_exception_handler,
 )
 from backend.schemas.common import HealthCheck, ApiResponse
-from backend.api.v1 import auth
+from backend.api.v1 import auth, workflows, workflow_executions
 
 logger = get_logger(__name__)
 
@@ -103,6 +103,8 @@ async def health_check():
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1", tags=["Authentication"])
+app.include_router(workflows.router, prefix="/api/v1", tags=["Workflows"])
+app.include_router(workflow_executions.router, prefix="/api/v1", tags=["Workflow Executions"])
 
 
 if __name__ == "__main__":

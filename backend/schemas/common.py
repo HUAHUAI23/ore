@@ -18,18 +18,19 @@ class ErrorResponse(BaseModel):
     details: Optional[Any] = None
 
 
-class PaginationMeta(BaseModel):
-    page: int = 1
-    limit: int = 10
-    total: int
-    total_pages: int
-
-
 class PaginatedResponse(BaseModel, Generic[T]):
-    success: bool = True
-    message: str = "Success"
-    data: list[T]
-    meta: PaginationMeta
+    items: list[T]
+    total: int
+    skip: int
+    limit: int
+    
+    @property
+    def page(self) -> int:
+        return (self.skip // self.limit) + 1
+    
+    @property
+    def total_pages(self) -> int:
+        return (self.total + self.limit - 1) // self.limit
 
 
 class HealthCheck(BaseModel):

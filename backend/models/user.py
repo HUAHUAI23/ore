@@ -3,40 +3,52 @@ User database model - 只包含数据库模型定义
 DTO模型已移至 schemas/user.py
 """
 
-from datetime import datetime, timezone
-
-from pydantic import EmailStr
-from sqlalchemy import func
-from sqlmodel import Column, DateTime, Field, SQLModel, Text
+from datetime import datetime
+from typing import Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship
 from sqlalchemy.orm import declared_attr
 from pydantic.alias_generators import to_snake
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .workflow import Workflow
+
 
 class User(SQLModel, table=True):
-    """User database table model."""
+    """用户模型 - 使用纯 SQLModel 语法"""
 
     @declared_attr.directive
     def __tablename__(cls) -> str:
         return to_snake(cls.__name__)  # User -> user
 
-    id: int | None = Field(default=None, primary_key=True, description="用户ID")
+    # 主键
+    id: Optional[int] = Field(default=None, primary_key=True, description="用户ID")
+
+    # 用户基本信息
     name: str = Field(max_length=100, unique=True, index=True, description="用户名")
+
     nickname: str = Field(max_length=50, description="用户昵称")
-    email: EmailStr | None = Field(
-        default=None, unique=True, index=True, description="用户邮箱"
+
+    # 联系信息
+    email: Optional[str] = Field(
+        default=None, max_length=255, unique=True, index=True, description="用户邮箱"
     )
-    phone: str | None = Field(
+
+    phone: Optional[str] = Field(
         default=None, max_length=20, unique=True, index=True, description="手机号码"
     )
-    password_hash: str = Field(sa_column=Column(Text), description="密码哈希值")
+
+    # 认证信息
+    password_hash: str = Field(description="密码哈希值")
+
+    # 状态信息
     is_active: bool = Field(default=True, description="是否激活")
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        sa_column=Column(DateTime(timezone=True), server_default=func.now()),
-        description="创建时间",
-    )
-    last_login: datetime | None = Field(
-        default=None,
-        sa_column=Column(DateTime(timezone=True)),
-        description="最后登录时间",
-    )
+
+    # 时间字段
+    created_at: Optional[datetime] = Field(default=None, description="创建时间")
+
+    last_login: Optional[datetime] = Field(default=None, description="最后登录时间")
+
+    # 关系定义
+    workflows: list["Workflow"] = Relationship(back_populates="created_by_user")

@@ -11,11 +11,6 @@ import traceback
 from datetime import datetime
 from pathlib import Path
 
-# 确保环境变量加载
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from workflow_engine.engines.tree.engine import TreeWorkflowEngine
 from workflow_engine.engines.tree.types import TreeWorkflowConfig
 
@@ -396,28 +391,6 @@ async def demo_conditional_workflow():
         print(f"❌ 条件工作流失败: {e}")
 
 
-def print_setup_instructions():
-    """打印设置说明"""
-    print("=" * 60)
-    print("📋 使用前请完成以下设置")
-    print("=" * 60)
-    print("1. 安装依赖:")
-    print("   pip install -r requirements.txt")
-    print("\n2. 配置环境变量:")
-    print("   复制 .env.example 为 .env")
-    print("   填写你的API密钥和配置")
-    print("\n3. 主要环境变量:")
-    print("   OPENAI_API_KEY=你的OpenAI API密钥")
-    print("   LLM_PROVIDER=openai")
-    print("   LLM_MODEL_NAME=gpt-3.5-turbo")
-    print("   LLM_TEMPERATURE=0.7")
-    print("\n4. 可选配置:")
-    print("   - 使用其他LLM：修改 LLM_PROVIDER 和对应的API密钥")
-    print("   - 调整参数：修改温度、最大token等")
-    print("   - 自定义端点：设置 API_BASE")
-    print("=" * 60)
-
-
 # ====================================================================
 # 新增的同步包装函数，作为命令行入口点
 # ====================================================================
@@ -426,11 +399,6 @@ def cli_main():
     同步的命令行入口函数。
     它负责检查环境并使用 asyncio.run() 来运行异步的演示函数。
     """
-    # 检查环境变量
-    if not os.getenv("OPENAI_API_KEY") and not os.getenv("ANTHROPIC_API_KEY"):
-        print_setup_instructions()
-        print("\n⚠️ 未检测到API密钥，请先配置环境变量后再运行")
-        return  # 提前退出
 
     try:
         # 运行主演示

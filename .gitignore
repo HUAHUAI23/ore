@@ -56,6 +56,9 @@ htmlcov/
 .dmypy.json
 dmypy.json
 
+# ruff
+.ruff_cache
+
 # 日志文件
 *.log
 logs/
@@ -72,3 +75,6 @@ tmp/
 # 操作系统相关
 Thumbs.db
 .DS_Store
+
+# 测试输出文件
+workflow_outputs

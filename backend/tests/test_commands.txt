@@ -1,0 +1,77 @@
+# 工作流核心API测试命令清单
+
+## 测试整个文件
+python -m pytest backend/tests/test_workflow_core_api.py -v
+
+## 单个测试命令
+
+### 1. 工作流创建接口测试
+# 打印测试用户token
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_print_test_user_token -v -s
+
+# 测试成功创建工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_success -v
+
+# 测试未认证用户创建工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_unauthorized -v
+
+# 测试无效数据创建工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_invalid_data -v
+
+### 2. 工作流运行接口测试
+# 测试成功运行工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_workflow_success -v
+
+# 测试未认证用户运行工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_workflow_unauthorized -v
+
+# 测试运行不存在的工作流
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_nonexistent_workflow -v
+
+### 3. 工作流取消接口测试
+# 测试成功取消工作流执行
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_execution_success -v
+
+# 测试未认证用户取消工作流执行
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_execution_unauthorized -v
+
+# 测试取消不存在的执行
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_nonexistent_execution -v
+
+### 4. 执行详情查询接口测试
+# 测试成功获取工作流执行详情
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_execution_detail_success -v
+
+# 测试未认证用户获取工作流执行详情
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_execution_detail_unauthorized -v
+
+# 测试获取不存在的执行详情
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_nonexistent_execution_detail -v
+
+### 5. 综合流程测试
+# 测试完整的工作流生命周期
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_complete_workflow_lifecycle -v
+
+## 按状态分组测试
+
+### 只测试未认证相关的测试（这些应该能通过）
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_unauthorized backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_workflow_unauthorized backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_execution_unauthorized backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_execution_detail_unauthorized -v
+
+### 测试需要认证的测试（这些可能失败）
+python -m pytest backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_success backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_create_workflow_invalid_data backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_workflow_success backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_run_nonexistent_workflow backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_execution_success backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_cancel_nonexistent_execution backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_execution_detail_success backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_get_nonexistent_execution_detail backend/tests/test_workflow_core_api.py::TestWorkflowCoreAPI::test_complete_workflow_lifecycle -v
+
+## 数据库相关说明
+# 测试使用的数据库会话fixture作用：
+# 1. session() fixture: 使用事务回滚确保测试隔离，每个测试结束后自动回滚所有数据库操作
+# 2. 使用AsyncSession(engine)创建异步数据库会话
+# 3. 使用事务(transaction = await session.begin())确保数据隔离
+# 4. 测试结束时自动回滚(await transaction.rollback())，不影响其他测试
+
+## 密码验证修复说明
+# 原密码"testpassword123"包含弱密码模式"password"，被密码验证器拒绝
+# 已修复为"StrongTest789!"，符合密码复杂度要求
+
+## 数据库关系修复说明
+# 修复了User.workflows和Workflow.created_by_user之间的关系配置错误
+# User模型: workflows: list["Workflow"] = Relationship(back_populates="created_by_user")
+# Workflow模型: created_by_user: "User" = Relationship(back_populates="workflows")

@@ -16,7 +16,7 @@
 
 import asyncio
 import os
-from typing import Dict, List, Any, Set, Optional, Union
+from typing import Dict, List, Any, Set, Optional, Union, Callable, Awaitable
 from collections import defaultdict
 from datetime import datetime
 
@@ -27,6 +27,9 @@ from config import workflow_settings
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+from pydantic import SecretStr
 
 from ...base.engine import BaseWorkflowEngine
 from ...workflow_types import NodeType
@@ -63,8 +66,21 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
     llm_model: Any  # LangChain ChatModel实例
     prompt_template: ChatPromptTemplate  # 统一的提示词模板
 
-    def __init__(self, workflow_config: TreeWorkflowConfig) -> None:
-        """初始化树形工作流引擎"""
+    def __init__(
+        self,
+        workflow_config: TreeWorkflowConfig,
+        tracking_callbacks: Optional[Dict[str, Callable]] = None,
+    ) -> None:
+        """初始化树形工作流引擎
+
+        Args:
+            workflow_config: 工作流配置
+            tracking_callbacks: 外部跟踪回调函数字典，可选参数
+                - on_execution_start: (workflow_id, execution_id) -> None
+                - on_node_completed: (execution_id, node_id, result) -> None
+                - on_node_failed: (execution_id, node_id, error) -> None
+                - on_execution_finished: (execution_id, summary) -> None
+        """
         super().__init__(workflow_config)
 
         # 初始化LLM
@@ -75,6 +91,12 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
 
         self.node_executor = self._default_node_executor
         self.condition_checker = self._default_condition_checker
+
+        # 存储外部跟踪回调函数
+        self.tracking_callbacks = tracking_callbacks or {}
+
+        # 执行ID，用于跟踪
+        self.current_execution_id: Optional[int] = None
 
     def _initialize_llm(self) -> None:
         """初始化LangChain LLM模型"""
@@ -87,20 +109,18 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             )
 
         try:
-            model_identifier = f"{config.provider}:{config.model_name}"
+            if config.provider == "openai":
+                self.llm_model = ChatOpenAI(
+                    model=config.model_name,
+                    api_key=SecretStr(config.api_key),
+                    base_url=config.api_base,
+                    temperature=config.temperature,
+                    max_completion_tokens=config.max_tokens,
+                )
+            else:
+                raise ValueError(f"不支持的LLM提供商: {config.provider}")
 
-            llm_kwargs = {
-                "temperature": config.temperature,
-                "max_tokens": config.max_tokens,
-            }
-
-            # 如果有自定义API端点
-            if config.api_base:
-                llm_kwargs["base_url"] = config.api_base
-
-            self.llm_model = init_chat_model(model_identifier, **llm_kwargs)
-
-            print(f"✅ LLM初始化成功: {model_identifier}")
+            print(f"✅ LLM初始化成功: {config.provider}:{config.model_name}")
 
         except Exception as e:
             print(f"❌ LLM初始化失败: {e}")
@@ -248,10 +268,26 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
 
         print(f"🎯 起始节点: {[self.nodes[nid].name for nid in start_nodes]}")
 
+        # 调用执行开始回调
+        if (
+            "on_execution_start" in self.tracking_callbacks
+            and self.current_execution_id
+        ):
+            try:
+                callback = self.tracking_callbacks["on_execution_start"]
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(self.workflow_id, self.current_execution_id)
+                else:
+                    callback(self.workflow_id, self.current_execution_id)
+            except Exception as e:
+                print(f"⚠️ 执行开始回调失败: {e}")
+
         # 启动所有起始节点
         for start_node_id in start_nodes:
             result = await self.node_executor(start_node_id, NodeInputData())
             self._mark_node_completed(start_node_id, result)
+            # 调用节点完成的外部回调
+            await self._call_node_completed_callback(start_node_id, result)
             await self._try_trigger_next_nodes(start_node_id)
 
         # 事件驱动循环
@@ -268,6 +304,20 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
             results=self.node_results,
         )
 
+        # 调用执行完成回调
+        if (
+            "on_execution_finished" in self.tracking_callbacks
+            and self.current_execution_id
+        ):
+            try:
+                callback = self.tracking_callbacks["on_execution_finished"]
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(self.current_execution_id, execution_summary)
+                else:
+                    callback(self.current_execution_id, execution_summary)
+            except Exception as e:
+                print(f"⚠️ 执行完成回调失败: {e}")
+
         return execution_summary
 
     async def _run_execution_loop(self) -> None:
@@ -281,9 +331,13 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
                     try:
                         result = await task
                         self._mark_node_completed(node_id, result)
+                        # 调用节点完成的外部回调
+                        await self._call_node_completed_callback(node_id, result)
                     except Exception as e:
                         print(f"❌ 节点 {self.nodes[node_id].name} 执行失败: {e}")
                         self._mark_node_failed(node_id, e)
+                        # 调用节点失败的外部回调
+                        await self._call_node_failed_callback(node_id, e)
 
             # 清理已完成的任务并触发后续节点
             for node_id in completed_task_ids:
@@ -486,6 +540,34 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
         await asyncio.sleep(0.2)
 
         return result
+
+    async def _call_node_completed_callback(self, node_id: str, result: Any) -> None:
+        """调用节点完成的外部回调"""
+        if "on_node_completed" in self.tracking_callbacks and self.current_execution_id:
+            try:
+                callback = self.tracking_callbacks["on_node_completed"]
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(self.current_execution_id, node_id, result)
+                else:
+                    callback(self.current_execution_id, node_id, result)
+            except Exception as e:
+                print(f"⚠️ 节点完成回调失败: {e}")
+
+    async def _call_node_failed_callback(self, node_id: str, error: Exception) -> None:
+        """调用节点失败的外部回调"""
+        if "on_node_failed" in self.tracking_callbacks and self.current_execution_id:
+            try:
+                callback = self.tracking_callbacks["on_node_failed"]
+                if asyncio.iscoroutinefunction(callback):
+                    await callback(self.current_execution_id, node_id, error)
+                else:
+                    callback(self.current_execution_id, node_id, error)
+            except Exception as e:
+                print(f"⚠️ 节点失败回调失败: {e}")
+
+    def set_execution_id(self, execution_id: int) -> None:
+        """设置当前执行ID"""
+        self.current_execution_id = execution_id
 
     def _mark_node_completed(self, node_id: str, result: Any) -> None:
         """重写以提供树形特有的日志"""
