@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
 import {
   Play,
+  Plus,
   Settings,
   Target,
+  Trash2,
   Workflow,
   X
 } from 'lucide-react'
@@ -41,6 +43,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { NodeType } from '@/types/workflow'
 import { type TreeNodeConfigFormValues, treeNodeConfigSchema } from '@/validation/workflow'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 
 interface NodeEditDialogProps {
   open: boolean
@@ -51,6 +55,12 @@ interface NodeEditDialogProps {
     description: string
     prompt: string
     nodeType: NodeType
+    conditions?: Array<{
+      match_target: string
+      match_type: string
+      match_value: string
+      case_sensitive: boolean
+    }>
   }
   onSave: (data: TreeNodeConfigFormValues) => void
 }
@@ -71,7 +81,13 @@ export function NodeEditDialog({
       description: '',
       prompt: '',
       node_type: NodeType.INTERMEDIATE,
+      conditions: [],
     },
+  })
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'conditions'
   })
 
   // 当nodeData变化时更新表单
@@ -83,6 +99,7 @@ export function NodeEditDialog({
         description: nodeData.description,
         prompt: nodeData.prompt,
         node_type: nodeData.nodeType,
+        conditions: nodeData.conditions || [],
       })
     }
   }, [nodeData, form])
@@ -309,6 +326,138 @@ export function NodeEditDialog({
                   </FormItem>
                 )}
               />
+
+              {/* 条件配置 */}
+              {(currentNodeType === NodeType.INTERMEDIATE || currentNodeType === NodeType.START) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="space-y-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <Label className="text-base font-medium">输出条件</Label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({
+                        match_target: 'node_output',
+                        match_type: 'contains' as const,
+                        match_value: '',
+                        case_sensitive: false
+                      })}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      添加条件
+                    </Button>
+                  </div>
+                  
+                  {fields.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      暂无条件配置，每个条件将生成一个连接点
+                    </p>
+                  )}
+                  
+                  {fields.map((field, index) => (
+                    <motion.div
+                      key={field.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="p-4 border rounded-lg space-y-3 bg-muted/30"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">条件 {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => remove(index)}
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {/* 隐藏的 match_target 字段 */}
+                      <FormField
+                        control={form.control}
+                        name={`conditions.${index}.match_target`}
+                        render={({ field }) => (
+                          <FormItem className="hidden">
+                            <FormControl>
+                              <Input {...field} value="node_output" readOnly />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <FormField
+                          control={form.control}
+                          name={`conditions.${index}.match_type`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>匹配方式</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="选择匹配方式" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="contains">包含</SelectItem>
+                                  <SelectItem value="not_contains">不包含</SelectItem>
+                                  <SelectItem value="fuzzy">模糊匹配</SelectItem>
+                                  <SelectItem value="regex">正则表达式</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name={`conditions.${index}.match_value`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>匹配值</FormLabel>
+                              <FormControl>
+                                <Input {...field} placeholder="输入匹配值" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <FormField
+                        control={form.control}
+                        name={`conditions.${index}.case_sensitive`}
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                            <FormControl>
+                              <Checkbox
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div className="space-y-1 leading-none">
+                              <FormLabel>区分大小写</FormLabel>
+                              <FormDescription>
+                                开启后将严格区分大小写字母
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
             </motion.div>
 
             <DialogFooter>

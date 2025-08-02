@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   Connection,
   EdgeChange,
@@ -19,7 +19,7 @@ import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
 import { useWorkflowEditorStore } from '@/stores/workflow-editor'
-import type { WorkflowResponse } from '@/types/workflow'
+import type { WorkflowResponse, ConditionConfig } from '@/types/workflow'
 import { NodeType } from '@/types/workflow'
 
 import { WorkflowEdge } from './workflow-edge'
@@ -33,6 +33,7 @@ interface WorkflowNodeData extends Record<string, unknown> {
   description: string
   prompt: string
   nodeType: NodeType
+  conditions?: ConditionConfig[]
 }
 
 interface WorkflowEditorProps {
@@ -53,7 +54,7 @@ export function WorkflowEditor({
   // React Flow 相关 hooks
   const { screenToFlowPosition } = useReactFlow()
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
-  
+
   // 选中的节点状态
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
 
@@ -68,12 +69,26 @@ export function WorkflowEditor({
   }), [])
 
   const onConnect = useCallback((params: Connection) => {
+    let condition = null
+    
+    // 检查是否从条件连接点连出
+    if (params.sourceHandle && params.sourceHandle.startsWith('condition-')) {
+      const conditionIndex = parseInt(params.sourceHandle.split('-')[1])
+      const sourceNode = nodes.find(n => n.id === params.source)
+      if (sourceNode && (sourceNode.data as any).conditions) {
+        const conditions = (sourceNode.data as any).conditions as ConditionConfig[]
+        if (conditions[conditionIndex]) {
+          condition = conditions[conditionIndex]
+        }
+      }
+    }
+    
     const newEdge = {
       ...params,
       id: `edge-${Date.now()}`,
       type: 'workflowEdge',
       data: {
-        condition: null,
+        condition,
         inputConfig: {
           include_prompt: true,
           include_previous_output: true,
@@ -81,7 +96,7 @@ export function WorkflowEditor({
       },
     }
     setEdges([...edges, newEdge])
-  }, [setEdges, edges])
+  }, [setEdges, edges, nodes])
 
   // 创建新节点
   const createNode = useCallback((nodeType: NodeType, position?: { x: number; y: number }) => {
@@ -126,6 +141,7 @@ export function WorkflowEditor({
       data: {
         ...nodeDefaults,
         nodeType,
+        conditions: [],
       },
     }
 
@@ -191,12 +207,12 @@ export function WorkflowEditor({
         activeElement.tagName === 'SELECT' ||
         activeElement.hasAttribute('contenteditable')
       )
-      
+
       // 如果有输入元素获得焦点，不处理删除键
       if (isInputElement) {
         return
       }
-      
+
       if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeIds.length > 0) {
         event.preventDefault()
         handleDeleteNodes(selectedNodeIds)
@@ -283,7 +299,7 @@ export function WorkflowEditor({
           zoomable
         />
       </ReactFlow>
-      
+
       {/* 选择工具栏 */}
       <WorkflowSelectionToolbar
         selectedNodes={selectedNodeIds}

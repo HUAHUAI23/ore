@@ -186,6 +186,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
               description: node.description,
               prompt: node.prompt,
               nodeType: node.node_type as NodeType,
+              conditions: node.conditions || [],
             },
           }))
 
@@ -227,6 +228,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
                 description: nodeData.description || node.data.description,
                 prompt: nodeData.prompt || node.data.prompt,
                 nodeType: nodeData.node_type || node.data.nodeType,
+                conditions: nodeData.conditions || node.data.conditions || [],
               }
             }
           }
@@ -250,6 +252,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             description: '',
             prompt: '',
             nodeType,
+            conditions: [],
           },
         }
 
@@ -307,6 +310,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             description: (node.data?.description as string) || '',
             prompt: (node.data?.prompt as string) || '',
             node_type: (node.data?.nodeType as NodeType) || 'INTERMEDIATE',
+            conditions: (node.data?.conditions as any) || [],
           }
           return acc
         }, {} as Record<string, TreeNodeConfig>)

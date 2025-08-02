@@ -47,6 +47,7 @@ export interface TreeNodeConfig {
   description: string
   prompt: string
   node_type: string // NodeType枚举值的字符串形式
+  conditions?: ConditionConfig[] // 节点的输出条件配置
 }
 
 // 树形边配置类型

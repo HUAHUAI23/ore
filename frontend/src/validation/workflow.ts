@@ -26,7 +26,8 @@ export const treeNodeConfigSchema = z.object({
   name: z.string().min(1, '节点名称不能为空').max(200, '节点名称不能超过200字符'),
   description: z.string().max(1000, '节点描述不能超过1000字符'),
   prompt: z.string(),
-  node_type: z.nativeEnum(NodeType)
+  node_type: z.nativeEnum(NodeType),
+  conditions: z.array(conditionConfigSchema).optional()
 })
 
 // 边配置验证

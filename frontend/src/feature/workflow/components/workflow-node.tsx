@@ -1,19 +1,19 @@
 import { memo } from 'react'
-import { Handle, Position, type NodeProps } from '@xyflow/react'
+import { Handle, type NodeProps, Position } from '@xyflow/react'
 import { motion } from 'framer-motion'
 import {
   Play,
   Settings,
-  ChevronRight,
-  Workflow,
   Target,
+  Workflow,
   Zap
 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import type { ConditionConfig } from '@/types/workflow'
 import { NodeType } from '@/types/workflow'
 
 interface WorkflowNodeData {
@@ -21,9 +21,11 @@ interface WorkflowNodeData {
   description: string
   prompt: string
   nodeType: NodeType
+  conditions?: ConditionConfig[]
 }
 
-interface WorkflowNodeProps extends NodeProps<WorkflowNodeData> {
+interface WorkflowNodeProps extends NodeProps {
+  data: WorkflowNodeData
   onEdit?: (nodeId: string, nodeData: WorkflowNodeData) => void
 }
 
@@ -126,6 +128,23 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
             </div>
           )}
 
+          {data.conditions && data.conditions.length > 0 && (
+            <div className="mb-3">
+              <div className="text-xs font-medium text-foreground mb-1">输出条件</div>
+              <div className="flex flex-wrap gap-1">
+                {data.conditions.map((condition: ConditionConfig, index: number) => (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="text-xs px-1 py-0"
+                  >
+                    {condition.match_type}:{condition.match_value}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -135,13 +154,6 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
             >
               <Settings className="w-3 h-3 mr-1" />
               配置
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <ChevronRight className="w-3 h-3" />
             </Button>
           </div>
         </CardContent>
@@ -157,11 +169,39 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
       )}
 
       {data.nodeType !== NodeType.LEAF && (
-        <Handle
-          type="source"
-          position={Position.Right}
-          className="w-3 h-3 bg-border border-2 border-background"
-        />
+        <>
+          {/* 默认连接点 */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="default"
+            className="w-3 h-3 bg-border border-2 border-background"
+            style={{ top: '50%' }}
+          />
+          
+          {/* 条件连接点 */}
+          {data.conditions && data.conditions.map((_condition: ConditionConfig, index: number) => {
+            const totalConditions = data.conditions!.length
+            const spacing = totalConditions > 1 ? 60 / (totalConditions + 1) : 0
+            const topPosition = totalConditions > 1 
+              ? 40 + (index + 1) * spacing
+              : 60
+            
+            return (
+              <Handle
+                key={`condition-${index}`}
+                type="source"
+                position={Position.Right}
+                id={`condition-${index}`}
+                className="w-2 h-2 bg-blue-500 border-2 border-background"
+                style={{ 
+                  top: `${topPosition}%`,
+                  right: '-6px'
+                }}
+              />
+            )
+          })}
+        </>
       )}
     </motion.div>
   )

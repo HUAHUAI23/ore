@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useWorkflowEditorStore } from '@/stores/workflow-editor'
 import { NodeType, WorkflowStatus } from '@/types/workflow'
 import type { TreeNodeConfigFormValues, WorkflowUpdateFormValues } from '@/validation/workflow'
+import type { ConditionConfig } from '@/types/workflow'
 
 import { useRunWorkflow, useUpdateWorkflow, useWorkflow } from '../hooks'
 
@@ -47,6 +48,7 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
       description: string
       prompt: string
       nodeType: NodeType
+      conditions?: ConditionConfig[]
     }
   }>({ open: false })
 
@@ -116,6 +118,7 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
     description: string
     prompt: string
     nodeType: NodeType
+    conditions?: ConditionConfig[]
   }) => {
     setNodeEditDialog({
       open: true,
@@ -125,6 +128,7 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
         description: nodeData.description,
         prompt: nodeData.prompt,
         nodeType: nodeData.nodeType,
+        conditions: nodeData.conditions || [],
       }
     })
   }
@@ -137,6 +141,7 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
       description: data.description,
       prompt: data.prompt,
       node_type: data.node_type,
+      conditions: data.conditions || [],
     })
 
     setNodeEditDialog({ open: false })
