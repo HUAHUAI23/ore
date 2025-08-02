@@ -3,7 +3,6 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 import { useAuthStore } from '@/store/auth'
 
-import Header from '../components/Header'
 
 export const Route = createRootRoute({
   beforeLoad: ({ location }) => {
@@ -21,7 +20,6 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <>
-      <Header />
       <Outlet />
       <TanStackRouterDevtools />
     </>
