@@ -119,6 +119,10 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
     prompt: string
     nodeType: NodeType
     conditions?: ConditionConfig[]
+    input_config?: {
+      include_prompt: boolean
+      include_previous_output: boolean
+    }
   }) => {
     setNodeEditDialog({
       open: true,
@@ -129,6 +133,10 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
         prompt: nodeData.prompt,
         nodeType: nodeData.nodeType,
         conditions: nodeData.conditions || [],
+        input_config: nodeData.input_config || {
+          include_prompt: true,
+          include_previous_output: true,
+        },
       }
     })
   }
@@ -141,7 +149,8 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
       description: data.description,
       prompt: data.prompt,
       node_type: data.node_type,
-      conditions: data.conditions || [],
+      conditions: data.conditions ?? [], // 使用nullish coalescing确保空数组也能正确传递
+      input_config: data.input_config,
     })
 
     setNodeEditDialog({ open: false })

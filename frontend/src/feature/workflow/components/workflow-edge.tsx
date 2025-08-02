@@ -14,7 +14,10 @@ interface WorkflowEdgeData {
   condition?: {
     match_type: string
     match_value: string
+    match_target?: string
+    case_sensitive?: boolean
   } | null
+  conditionIndex?: number // 条件索引
   inputConfig?: {
     include_prompt: boolean
     include_previous_output: boolean
@@ -124,6 +127,7 @@ export const WorkflowEdge = memo(({
             className="nodrag nopan"
           >
             <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 shadow-sm">
+              <span className="text-blue-600 font-mono mr-1">[{edgeData?.conditionIndex ?? '?'}]</span>
               {edgeData?.condition?.match_type}: {edgeData?.condition?.match_value}
             </Badge>
           </div>

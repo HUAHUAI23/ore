@@ -27,15 +27,15 @@ export const treeNodeConfigSchema = z.object({
   description: z.string().max(1000, '节点描述不能超过1000字符'),
   prompt: z.string(),
   node_type: z.nativeEnum(NodeType),
-  conditions: z.array(conditionConfigSchema).optional()
+  conditions: z.array(conditionConfigSchema).optional(),
+  input_config: treeInputConfigSchema // 节点级别的输入配置
 })
 
 // 边配置验证
 export const treeEdgeConfigSchema = z.object({
   from_node: z.string().min(1, '源节点ID不能为空'),
   to_node: z.string().min(1, '目标节点ID不能为空'),
-  condition: conditionConfigSchema.optional().nullable(),
-  input_config: treeInputConfigSchema
+  condition: conditionConfigSchema.optional().nullable()
 })
 
 // 工作流创建验证

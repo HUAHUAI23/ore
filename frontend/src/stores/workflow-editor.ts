@@ -187,19 +187,73 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
               prompt: node.prompt,
               nodeType: node.node_type as NodeType,
               conditions: node.conditions || [],
+              input_config: node.input_config || {
+                include_prompt: true,
+                include_previous_output: true,
+              },
             },
           }))
 
-          const workflowEdges = (workflow.edges || []).map((edge: any, index) => ({
-            id: `edge-${index}`,
-            source: edge.from_node,
-            target: edge.to_node,
-            type: 'workflowEdge',
-            data: {
-              condition: edge.condition,
-              inputConfig: edge.input_config,
-            },
-          }))
+
+        // TODO: 优化点 sourceHandle 信息存储到后端 edges 字段
+  // 1. 边的数据：从后端加载的边包含条件信息，但sourceHandle信息丢失
+  // 2. 连接点映射：重新渲染时，边无法找到正确的sourceHandle，都连到了默认连接点
+
+  // 问题分析
+
+  // 从后端加载的边数据结构是这样的：
+  // {
+  //   "from_node": "content_classifier",
+  //   "to_node": "technical_processor",
+  //   "condition": {
+  //     "match_type": "contains",
+  //     "match_value": "技术文章"
+  //   }
+  // }
+
+  // 但React Flow的边需要sourceHandle信息来知道连接到哪个具体的连接点。
+
+  // 解决方案：在加载边时重建sourceHandle
+
+          const workflowEdges = (workflow.edges || []).map((edge: any, index) => {
+            let sourceHandle = 'default'
+            let conditionIndex = -1
+            
+            // 如果边有条件，需要找到对应的源节点条件索引
+            if (edge.condition && edge.from_node) {
+              const sourceNode = workflow.nodes[edge.from_node]
+              if (sourceNode && sourceNode.conditions) {
+                // 在源节点的条件中找到匹配的条件
+                conditionIndex = sourceNode.conditions.findIndex((condition: any) => {
+                  const targetMatch = (condition.match_target || 'node_output') === (edge.condition.match_target || 'node_output')
+                  const typeMatch = condition.match_type === edge.condition.match_type
+                  const valueMatch = condition.match_value === edge.condition.match_value
+                  const caseMatch = (condition.case_sensitive ?? false) === (edge.condition.case_sensitive ?? false)
+                  
+                  return targetMatch && typeMatch && valueMatch && caseMatch
+                })
+                
+                if (conditionIndex >= 0) {
+                  sourceHandle = `condition-${conditionIndex}`
+                  console.log(`边 ${edge.from_node} -> ${edge.to_node} 重建 sourceHandle: ${sourceHandle}, 条件索引: ${conditionIndex}`)
+                } else {
+                  console.warn(`未找到匹配条件，边: ${edge.from_node} -> ${edge.to_node}`, edge.condition)
+                }
+              }
+            }
+            
+            return {
+              id: `edge-${index}`,
+              source: edge.from_node,
+              target: edge.to_node,
+              sourceHandle, // 重要：重建 sourceHandle
+              type: 'workflowEdge',
+              data: {
+                condition: edge.condition,
+                conditionIndex,
+              },
+            }
+          })
 
           set({ nodes, edges: workflowEdges })
         }
@@ -228,7 +282,11 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
                 description: nodeData.description || node.data.description,
                 prompt: nodeData.prompt || node.data.prompt,
                 nodeType: nodeData.node_type || node.data.nodeType,
-                conditions: nodeData.conditions || node.data.conditions || [],
+                conditions: nodeData.conditions !== undefined ? nodeData.conditions : (node.data.conditions || []),
+                input_config: nodeData.input_config !== undefined ? nodeData.input_config : (node.data.input_config || {
+                  include_prompt: true,
+                  include_previous_output: true,
+                }),
               }
             }
           }
@@ -253,6 +311,10 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             prompt: '',
             nodeType,
             conditions: [],
+            input_config: {
+              include_prompt: true,
+              include_previous_output: true,
+            },
           },
         }
 
@@ -311,6 +373,10 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             prompt: (node.data?.prompt as string) || '',
             node_type: (node.data?.nodeType as NodeType) || 'INTERMEDIATE',
             conditions: (node.data?.conditions as any) || [],
+            input_config: (node.data?.input_config as any) || {
+              include_prompt: true,
+              include_previous_output: true,
+            },
           }
           return acc
         }, {} as Record<string, TreeNodeConfig>)
@@ -320,10 +386,6 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
           from_node: edge.source,
           to_node: edge.target,
           condition: (edge.data?.condition as any) || null,
-          input_config: (edge.data?.inputConfig as any) || {
-            include_prompt: true,
-            include_previous_output: true,
-          },
         }))
 
         return {

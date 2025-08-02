@@ -48,6 +48,10 @@ export function CreateWorkflowDialog({ open, onOpenChange }: CreateWorkflowDialo
           description: '工作流开始节点',
           prompt: '',
           node_type: NodeType.START,
+          input_config: {
+            include_prompt: true,
+            include_previous_output: true,
+          },
         },
       },
       edges: [],

@@ -61,6 +61,10 @@ interface NodeEditDialogProps {
       match_value: string
       case_sensitive: boolean
     }>
+    input_config?: {
+      include_prompt: boolean
+      include_previous_output: boolean
+    }
   }
   onSave: (data: TreeNodeConfigFormValues) => void
 }
@@ -82,6 +86,10 @@ export function NodeEditDialog({
       prompt: '',
       node_type: NodeType.INTERMEDIATE,
       conditions: [],
+      input_config: {
+        include_prompt: true,
+        include_previous_output: true,
+      },
     },
   })
 
@@ -100,6 +108,10 @@ export function NodeEditDialog({
         prompt: nodeData.prompt,
         node_type: nodeData.nodeType,
         conditions: nodeData.conditions || [],
+        input_config: nodeData.input_config || {
+          include_prompt: true,
+          include_previous_output: true,
+        },
       })
     }
   }, [nodeData, form])
@@ -326,6 +338,65 @@ export function NodeEditDialog({
                   </FormItem>
                 )}
               />
+
+              {/* 输入配置 */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between">
+                  <Label className="text-base font-medium">输入配置</Label>
+                  <Badge variant="outline" className="text-xs">
+                    节点级别配置
+                  </Badge>
+                </div>
+                
+                <div className="p-4 border rounded-lg space-y-3 bg-muted/30">
+                  <FormField
+                    control={form.control}
+                    name="input_config.include_prompt"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>包含提示词</FormLabel>
+                          <FormDescription>
+                            在节点输入中包含当前节点的提示词内容
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="input_config.include_previous_output"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel>包含前置输出</FormLabel>
+                          <FormDescription>
+                            在节点输入中包含上一个节点的输出结果
+                          </FormDescription>
+                        </div>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </motion.div>
 
               {/* 条件配置 */}
               {(currentNodeType === NodeType.INTERMEDIATE || currentNodeType === NodeType.START) && (

@@ -49,7 +49,7 @@ export function WorkflowsPage() {
   )
 
   const handleEditWorkflow = (workflow: WorkflowListItem) => {
-    navigate({ to: `/edit/${workflow.id}` })
+    navigate({ to: `/workflow/${workflow.id}` })
   }
 
   const handleRunWorkflow = (workflow: WorkflowListItem) => {

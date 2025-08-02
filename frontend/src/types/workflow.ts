@@ -48,6 +48,7 @@ export interface TreeNodeConfig {
   prompt: string
   node_type: string // NodeType枚举值的字符串形式
   conditions?: ConditionConfig[] // 节点的输出条件配置
+  input_config: TreeInputConfig // 节点的输入配置
 }
 
 // 树形边配置类型
@@ -55,7 +56,6 @@ export interface TreeEdgeConfig {
   from_node: string // 源节点ID
   to_node: string // 目标节点ID
   condition?: ConditionConfig | null // 条件配置
-  input_config: TreeInputConfig
 }
 
 // 工作流创建请求

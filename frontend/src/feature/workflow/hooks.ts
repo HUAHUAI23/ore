@@ -67,7 +67,7 @@ export const useCreateWorkflow = () => {
       toast.success('工作流创建成功')
       
       // 跳转到工作流编辑页面
-      navigate({ to: `/workflows/${response.id}` })
+      navigate({ to: `/workflow/${response.id}` })
     },
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : '创建工作流失败'

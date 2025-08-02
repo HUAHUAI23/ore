@@ -19,7 +19,7 @@ import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
 import { useWorkflowEditorStore } from '@/stores/workflow-editor'
-import type { WorkflowResponse, ConditionConfig } from '@/types/workflow'
+import type { ConditionConfig, WorkflowResponse } from '@/types/workflow'
 import { NodeType } from '@/types/workflow'
 
 import { WorkflowEdge } from './workflow-edge'
@@ -34,6 +34,10 @@ interface WorkflowNodeData extends Record<string, unknown> {
   prompt: string
   nodeType: NodeType
   conditions?: ConditionConfig[]
+  input_config?: {
+    include_prompt: boolean
+    include_previous_output: boolean
+  }
 }
 
 interface WorkflowEditorProps {
@@ -70,31 +74,45 @@ export function WorkflowEditor({
 
   const onConnect = useCallback((params: Connection) => {
     let condition = null
-    
+    let conditionIndex = -1
+
     // 检查是否从条件连接点连出
     if (params.sourceHandle && params.sourceHandle.startsWith('condition-')) {
-      const conditionIndex = parseInt(params.sourceHandle.split('-')[1])
+      conditionIndex = parseInt(params.sourceHandle.split('-')[1])
       const sourceNode = nodes.find(n => n.id === params.source)
+
       if (sourceNode && (sourceNode.data as any).conditions) {
         const conditions = (sourceNode.data as any).conditions as ConditionConfig[]
-        if (conditions[conditionIndex]) {
+
+        // 验证索引有效性
+        if (conditionIndex >= 0 && conditionIndex < conditions.length) {
           condition = conditions[conditionIndex]
+          console.log(`创建条件边: 索引 ${conditionIndex}, 条件:`, condition)
+        } else {
+          console.warn(`条件索引 ${conditionIndex} 超出范围, 总条件数: ${conditions.length}`)
         }
+      } else {
+        console.warn(`源节点 ${params.source} 没有条件数据`)
       }
     }
-    
+
     const newEdge = {
       ...params,
       id: `edge-${Date.now()}`,
       type: 'workflowEdge',
       data: {
         condition,
-        inputConfig: {
-          include_prompt: true,
-          include_previous_output: true,
-        },
+        conditionIndex, // 添加索引信息用于调试
       },
     }
+
+    console.log('创建新边:', {
+      from: params.source,
+      to: params.target,
+      handle: params.sourceHandle,
+      condition: condition ? `${condition.match_type}:${condition.match_value}` : '无条件'
+    })
+
     setEdges([...edges, newEdge])
   }, [setEdges, edges, nodes])
 
@@ -142,6 +160,10 @@ export function WorkflowEditor({
         ...nodeDefaults,
         nodeType,
         conditions: [],
+        input_config: {
+          include_prompt: true,
+          include_previous_output: true,
+        },
       },
     }
 

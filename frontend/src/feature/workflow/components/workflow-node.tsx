@@ -30,6 +30,7 @@ interface WorkflowNodeProps extends NodeProps {
 }
 
 export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNodeProps) => {
+
   const getNodeConfig = (nodeType: NodeType) => {
     switch (nodeType) {
       case NodeType.START:
@@ -136,8 +137,10 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
                   <Badge
                     key={index}
                     variant="outline"
-                    className="text-xs px-1 py-0"
+                    className="text-xs px-1 py-0 bg-blue-50 border-blue-200"
+                    title={`连接点: condition-${index}`}
                   >
+                    <span className="text-blue-600 font-mono mr-1">{index}</span>
                     {condition.match_type}:{condition.match_value}
                   </Badge>
                 ))}
@@ -170,37 +173,44 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
 
       {data.nodeType !== NodeType.LEAF && (
         <>
-          {/* 默认连接点 */}
-          <Handle
-            type="source"
-            position={Position.Right}
-            id="default"
-            className="w-3 h-3 bg-border border-2 border-background"
-            style={{ top: '50%' }}
-          />
-          
-          {/* 条件连接点 */}
-          {data.conditions && data.conditions.map((_condition: ConditionConfig, index: number) => {
-            const totalConditions = data.conditions!.length
-            const spacing = totalConditions > 1 ? 60 / (totalConditions + 1) : 0
-            const topPosition = totalConditions > 1 
-              ? 40 + (index + 1) * spacing
-              : 60
-            
-            return (
-              <Handle
-                key={`condition-${index}`}
-                type="source"
-                position={Position.Right}
-                id={`condition-${index}`}
-                className="w-2 h-2 bg-blue-500 border-2 border-background"
-                style={{ 
-                  top: `${topPosition}%`,
-                  right: '-6px'
-                }}
-              />
-            )
-          })}
+          {/* 条件连接点和默认连接点 */}
+          {data.conditions && data.conditions.length > 0 ? (
+            // 有条件时：为每个条件创建连接点
+            data.conditions.map((condition: ConditionConfig, index: number) => {
+              const totalConditions = data.conditions!.length
+              // 改进位置计算：从20%开始，到80%结束，均匀分布
+              const topPosition = totalConditions === 1
+                ? 50 // 单个条件时居中
+                : 20 + (index * 60) / (totalConditions - 1) // 多个条件时均匀分布
+
+              return (
+                <Handle
+                  key={`${id}-condition-${index}-${condition.match_type}-${condition.match_value}`}
+                  type="source"
+                  position={Position.Right}
+                  id={`condition-${index}`}
+                  className="w-4 h-4 bg-blue-500 border-2 border-white shadow-lg hover:bg-blue-600 hover:scale-110 transition-all duration-200 cursor-pointer"
+                  style={{
+                    top: `${topPosition}%`,
+                    right: '-8px',
+                    zIndex: 10 + index,
+                    position: 'absolute'
+                  }}
+                  title={`条件 [${index}]: ${condition.match_type} "${condition.match_value}"`}
+                />
+              )
+            })
+          ) : (
+            // 无条件时：显示默认连接点
+            <Handle
+              type="source"
+              position={Position.Right}
+              id="default"
+              className="w-3 h-3 bg-border border-2 border-background hover:bg-gray-400 transition-colors"
+              style={{ top: '50%', zIndex: 5 }}
+              title="默认连接点"
+            />
+          )}
         </>
       )}
     </motion.div>
