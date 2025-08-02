@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -6,11 +6,9 @@ import {
   getBezierPath,
   useReactFlow
 } from '@xyflow/react'
-import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 
 interface WorkflowEdgeData {
   condition?: {
@@ -34,8 +32,10 @@ export const WorkflowEdge = memo(({
   style = {},
   data = {},
   markerEnd,
+  selected,
 }: EdgeProps) => {
   const { setEdges } = useReactFlow()
+  const [isHovered, setIsHovered] = useState(false)
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -55,61 +55,73 @@ export const WorkflowEdge = memo(({
 
   return (
     <>
-      <BaseEdge
-        path={edgePath}
-        markerEnd={markerEnd}
-        style={{
-          ...(style || {}),
-          strokeWidth: 2,
-          stroke: hasCondition ? '#3b82f6' : '#6b7280',
-        }}
-      />
+      {/* 连接线 */}
+      <g
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        style={{ cursor: 'pointer' }}
+      >
+        <BaseEdge
+          path={edgePath}
+          markerEnd={markerEnd}
+          style={{
+            ...(style || {}),
+            strokeWidth: selected || isHovered ? 3 : 2,
+            stroke: hasCondition ? '#3b82f6' : (selected || isHovered ? '#374151' : '#6b7280'),
+          }}
+        />
+        {/* 透明的宽边，便于鼠标交互 */}
+        <path
+          d={edgePath}
+          fill="none"
+          stroke="transparent"
+          strokeWidth="20"
+          style={{ cursor: 'pointer' }}
+        />
+      </g>
 
+      {/* 删除按钮 - 悬停或选中时显示 */}
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
+            opacity: (isHovered || selected) ? 1 : 0,
+            transition: 'opacity 0.2s ease-in-out',
           }}
           className="nodrag nopan"
         >
-          {/* 条件标签 */}
-          {hasCondition && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.2 }}
-              className="mb-2"
-            >
-              <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                {edgeData?.condition?.match_type}: {edgeData?.condition?.match_value}
-              </Badge>
-            </motion.div>
-          )}
-          
-          {/* 删除按钮 - 始终在边的中间显示 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-            className="flex justify-center"
+          <button
+            className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdgeClick()
+            }}
+            title="删除连接线"
           >
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-6 w-6 p-0 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md"
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdgeClick()
-              }}
-              title="删除连接线"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </motion.div>
+            <X className="w-3 h-3" />
+          </button>
         </div>
       </EdgeLabelRenderer>
+
+      {/* 条件标签 - 仅在有条件时显示 */}
+      {hasCondition && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -120%) translate(${labelX}px,${labelY}px)`,
+              pointerEvents: 'all',
+            }}
+            className="nodrag nopan"
+          >
+            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 shadow-sm">
+              {edgeData?.condition?.match_type}: {edgeData?.condition?.match_value}
+            </Badge>
+          </div>
+        </EdgeLabelRenderer>
+      )}
     </>
   )
 })

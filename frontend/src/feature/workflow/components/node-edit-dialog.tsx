@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { 
-  Settings, 
-  Play, 
-  Workflow, 
+import {
+  Play,
+  Settings,
   Target,
-  X 
+  Workflow,
+  X
 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,7 +30,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -37,10 +37,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Badge } from '@/components/ui/badge'
+import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { NodeType } from '@/types/workflow'
-import { treeNodeConfigSchema, type TreeNodeConfigFormValues } from '@/validation/workflow'
+import { type TreeNodeConfigFormValues, treeNodeConfigSchema } from '@/validation/workflow'
 
 interface NodeEditDialogProps {
   open: boolean
@@ -55,11 +55,11 @@ interface NodeEditDialogProps {
   onSave: (data: TreeNodeConfigFormValues) => void
 }
 
-export function NodeEditDialog({ 
-  open, 
-  onOpenChange, 
+export function NodeEditDialog({
+  open,
+  onOpenChange,
   nodeData,
-  onSave 
+  onSave
 }: NodeEditDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -258,8 +258,8 @@ export function NodeEditDialog({
                   <FormItem>
                     <FormLabel>节点描述</FormLabel>
                     <FormControl>
-                      <Textarea 
-                        {...field} 
+                      <Textarea
+                        {...field}
                         placeholder="输入节点的详细描述"
                         className="min-h-[80px]"
                       />
@@ -285,24 +285,24 @@ export function NodeEditDialog({
                       )}
                     </FormLabel>
                     <FormControl>
-                      <Textarea 
-                        {...field} 
+                      <Textarea
+                        {...field}
                         placeholder={
-                          currentNodeType === NodeType.START 
+                          currentNodeType === NodeType.START
                             ? "开始节点通常不需要提示词..."
                             : currentNodeType === NodeType.LEAF
-                            ? "输入总结性的提示词..."
-                            : "输入处理逻辑的提示词..."
+                              ? "输入总结性的提示词..."
+                              : "输入处理逻辑的提示词..."
                         }
                         className="min-h-[120px]"
                       />
                     </FormControl>
                     <FormDescription>
-                      {currentNodeType === NodeType.START 
+                      {currentNodeType === NodeType.START
                         ? "开始节点通常不需要提示词，除非需要初始化上下文"
                         : currentNodeType === NodeType.LEAF
-                        ? "结束节点可以配置总结性的提示词"
-                        : "配置节点执行时使用的AI提示词"
+                          ? "结束节点可以配置总结性的提示词"
+                          : "配置节点执行时使用的AI提示词"
                       }
                     </FormDescription>
                     <FormMessage />
@@ -312,9 +312,9 @@ export function NodeEditDialog({
             </motion.div>
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >

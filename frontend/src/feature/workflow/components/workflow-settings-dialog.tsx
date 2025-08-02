@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { motion } from 'framer-motion'
-import { 
-  Settings, 
+import {
+  Clock,
   Info,
-  Zap,
+  Settings,
   Users,
-  Clock
+  Zap
 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -29,7 +30,6 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import {
   Select,
   SelectContent,
@@ -37,12 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Switch } from '@/components/ui/switch'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import { WorkflowStatus } from '@/types/workflow'
-import { workflowUpdateSchema, type WorkflowUpdateFormValues } from '@/validation/workflow'
+import { type WorkflowUpdateFormValues, workflowUpdateSchema } from '@/validation/workflow'
 
 interface WorkflowSettingsDialogProps {
   open: boolean
@@ -58,11 +58,11 @@ interface WorkflowSettingsDialogProps {
   onSave: (data: WorkflowUpdateFormValues) => void
 }
 
-export function WorkflowSettingsDialog({ 
-  open, 
-  onOpenChange, 
+export function WorkflowSettingsDialog({
+  open,
+  onOpenChange,
   workflowData,
-  onSave 
+  onSave
 }: WorkflowSettingsDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -103,26 +103,26 @@ export function WorkflowSettingsDialog({
   const getStatusConfig = (status: WorkflowStatus) => {
     switch (status) {
       case WorkflowStatus.ACTIVE:
-        return { 
-          label: '活跃', 
+        return {
+          label: '活跃',
           color: 'bg-green-100 text-green-800',
           description: '工作流正在运行中，可以执行'
         }
       case WorkflowStatus.INACTIVE:
-        return { 
-          label: '已停用', 
+        return {
+          label: '已停用',
           color: 'bg-gray-100 text-gray-800',
           description: '工作流已停用，不能执行'
         }
       case WorkflowStatus.DRAFT:
-        return { 
-          label: '草稿', 
+        return {
+          label: '草稿',
           color: 'bg-blue-100 text-blue-800',
           description: '工作流还在编辑中，未发布'
         }
       default:
-        return { 
-          label: '未知', 
+        return {
+          label: '未知',
           color: 'bg-gray-100 text-gray-800',
           description: ''
         }
@@ -196,8 +196,8 @@ export function WorkflowSettingsDialog({
                       <FormItem>
                         <FormLabel>工作流描述</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            {...field} 
+                          <Textarea
+                            {...field}
                             placeholder="输入工作流的详细描述"
                             className="min-h-[100px]"
                           />
@@ -385,9 +385,9 @@ export function WorkflowSettingsDialog({
             </Tabs>
 
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
                 disabled={isSubmitting}
               >

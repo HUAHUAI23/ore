@@ -1,19 +1,21 @@
+import { format, formatDistanceToNow } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 import { motion } from 'framer-motion'
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  AlertTriangle,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Copy,
+  Download,
+  FileText,
   Pause,
   Play,
-  Calendar,
-  AlertTriangle,
-  FileText,
-  Download,
-  Copy
+  XCircle
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -21,15 +23,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { useExecutionDetail, useCancelExecution } from '../hooks'
 import { ExecutionStatus } from '@/types/workflow'
+
+import { useCancelExecution, useExecutionDetail } from '../hooks'
 
 interface WorkflowExecutionDialogProps {
   executionId: number | null
@@ -37,10 +38,10 @@ interface WorkflowExecutionDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-export function WorkflowExecutionDialog({ 
-  executionId, 
-  open, 
-  onOpenChange 
+export function WorkflowExecutionDialog({
+  executionId,
+  open,
+  onOpenChange
 }: WorkflowExecutionDialogProps) {
   const { data: execution, isLoading } = useExecutionDetail(executionId!)
   const cancelExecutionMutation = useCancelExecution()
@@ -119,15 +120,15 @@ export function WorkflowExecutionDialog({
 
   const calculateDuration = () => {
     if (!execution?.started_at) return null
-    
-    const endTime = execution.completed_at 
-      ? new Date(execution.completed_at) 
+
+    const endTime = execution.completed_at
+      ? new Date(execution.completed_at)
       : new Date()
     const startTime = new Date(execution.started_at)
-    
+
     const durationMs = endTime.getTime() - startTime.getTime()
     const durationSeconds = Math.floor(durationMs / 1000)
-    
+
     if (durationSeconds < 60) {
       return `${durationSeconds} 秒`
     } else if (durationSeconds < 3600) {
@@ -211,7 +212,7 @@ export function WorkflowExecutionDialog({
                         )
                       })()}
                     </div>
-                    
+
                     {execution.status === ExecutionStatus.RUNNING && (
                       <Button
                         variant="outline"
@@ -231,12 +232,12 @@ export function WorkflowExecutionDialog({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">执行进度</span>
                       <span className="font-medium">
-                        {execution.completed_nodes}/{execution.total_nodes} 
+                        {execution.completed_nodes}/{execution.total_nodes}
                         ({Math.round(calculateProgress())}%)
                       </span>
                     </div>
                     <Progress value={calculateProgress()} className="h-2" />
-                    
+
                     {execution.failed_nodes > 0 && (
                       <div className="flex items-center gap-2 text-sm text-red-600">
                         <AlertTriangle className="w-4 h-4" />

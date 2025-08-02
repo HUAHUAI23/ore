@@ -1,19 +1,19 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useEffect, useState } from 'react'
 import type {
   Connection,
-  EdgeTypes,
-  NodeTypes,
-  NodeChange,
   EdgeChange,
+  EdgeTypes,
+  NodeChange,
+  NodeTypes,
 } from '@xyflow/react'
 import {
+  applyEdgeChanges,
+  applyNodeChanges,
   Background,
   Controls,
   MiniMap,
   ReactFlow,
   useReactFlow,
-  applyNodeChanges,
-  applyEdgeChanges,
 } from '@xyflow/react'
 import { motion } from 'framer-motion'
 
@@ -24,6 +24,7 @@ import { NodeType } from '@/types/workflow'
 
 import { WorkflowEdge } from './workflow-edge'
 import { WorkflowNode } from './workflow-node'
+import { WorkflowSelectionToolbar } from './workflow-selection-toolbar'
 
 import '@xyflow/react/dist/style.css'
 
@@ -48,10 +49,13 @@ export function WorkflowEditor({
   className
 }: WorkflowEditorProps) {
   // 使用 Zustand store
-  const { nodes, edges, setNodes, setEdges } = useWorkflowEditorStore()
+  const { nodes, edges, setNodes, setEdges, removeNodes } = useWorkflowEditorStore()
   // React Flow 相关 hooks
   const { screenToFlowPosition } = useReactFlow()
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
+  
+  // 选中的节点状态
+  const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
 
   // 自定义节点类型
   const nodeTypes: NodeTypes = useMemo(() => ({
@@ -164,6 +168,53 @@ export function WorkflowEditor({
     setEdges(updatedEdges)
   }, [edges, setEdges])
 
+  // 处理选择变化
+  const handleSelectionChange = useCallback((selection: { nodes: { id: string }[] }) => {
+    const nodeIds = selection.nodes.map(node => node.id)
+    setSelectedNodeIds(nodeIds)
+  }, [])
+
+  // 删除选中的节点
+  const handleDeleteNodes = useCallback((nodeIds: string[]) => {
+    removeNodes(nodeIds)
+    setSelectedNodeIds([])
+  }, [removeNodes])
+
+  // 键盘事件处理 - 只在工作流编辑器容器内生效
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 检查焦点是否在工作流编辑器内，或者没有其他输入元素获得焦点
+      const activeElement = document.activeElement
+      const isInputElement = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.tagName === 'SELECT' ||
+        activeElement.hasAttribute('contenteditable')
+      )
+      
+      // 如果有输入元素获得焦点，不处理删除键
+      if (isInputElement) {
+        return
+      }
+      
+      if ((event.key === 'Delete' || event.key === 'Backspace') && selectedNodeIds.length > 0) {
+        event.preventDefault()
+        handleDeleteNodes(selectedNodeIds)
+      }
+    }
+
+    // 只在工作流编辑器容器上添加事件监听器
+    const container = reactFlowWrapper.current
+    if (container) {
+      container.addEventListener('keydown', handleKeyDown)
+      // 确保容器可以获得焦点
+      container.tabIndex = -1
+      return () => {
+        container.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+  }, [selectedNodeIds, handleDeleteNodes])
+
 
 
   return (
@@ -187,16 +238,20 @@ export function WorkflowEditor({
         onNodeDoubleClick={(_, node) => {
           onEditNode?.(node.id, node.data as WorkflowNodeData)
         }}
+        onSelectionChange={handleSelectionChange}
         fitView
         fitViewOptions={{
           padding: 0.2,
         }}
         className="bg-background"
-        deleteKeyCode={["Backspace", "Delete"]}
+        deleteKeyCode={null}
         multiSelectionKeyCode={["Meta", "Ctrl"]}
-        panOnDrag={[1, 2]}
-        selectionOnDrag
+        panOnDrag={true}
+        selectionOnDrag={false}
         snapToGrid={false}
+        panOnScroll={false}
+        selectionKeyCode={null}
+        selectNodesOnDrag={false}
       >
         <Background
           color="#e2e8f0"
@@ -228,6 +283,18 @@ export function WorkflowEditor({
           zoomable
         />
       </ReactFlow>
+      
+      {/* 选择工具栏 */}
+      <WorkflowSelectionToolbar
+        selectedNodes={selectedNodeIds}
+        onDeleteNodes={handleDeleteNodes}
+        onEditNode={(nodeId) => {
+          const node = nodes.find(n => n.id === nodeId)
+          if (node) {
+            onEditNode?.(nodeId, node.data as WorkflowNodeData)
+          }
+        }}
+      />
     </motion.div>
   )
 }

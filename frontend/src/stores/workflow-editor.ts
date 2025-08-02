@@ -9,6 +9,111 @@ import { devtools } from 'zustand/middleware'
 
 import type { NodeType, TreeNodeConfig,WorkflowResponse } from '@/types/workflow'
 
+// 智能布局算法
+function createWorkflowLayout(nodes: any[], edges: any[]) {
+  // 创建节点图结构
+  const nodeMap = new Map(nodes.map(node => [node.id, node]))
+  const adjacencyMap = new Map<string, string[]>()
+  const inDegreeMap = new Map<string, number>()
+  
+  // 初始化邻接表和入度
+  nodes.forEach(node => {
+    adjacencyMap.set(node.id, [])
+    inDegreeMap.set(node.id, 0)
+  })
+  
+  // 构建图结构
+  edges.forEach(edge => {
+    const from = edge.from_node
+    const to = edge.to_node
+    if (adjacencyMap.has(from) && adjacencyMap.has(to)) {
+      adjacencyMap.get(from)!.push(to)
+      inDegreeMap.set(to, (inDegreeMap.get(to) || 0) + 1)
+    }
+  })
+  
+  // 拓扑排序分层
+  const layers: string[][] = []
+  const visited = new Set<string>()
+  const queue: string[] = []
+  
+  // 找到所有起始节点（入度为0的节点）
+  nodes.forEach(node => {
+    if (inDegreeMap.get(node.id) === 0) {
+      queue.push(node.id)
+    }
+  })
+  
+  // 如果没有入度为0的节点，找START类型节点
+  if (queue.length === 0) {
+    const startNode = nodes.find(node => node.node_type === 'START')
+    if (startNode) {
+      queue.push(startNode.id)
+    }
+  }
+  
+  // 分层布局
+  while (queue.length > 0) {
+    const currentLayer: string[] = []
+    const nextQueue: string[] = []
+    
+    while (queue.length > 0) {
+      const nodeId = queue.shift()!
+      if (!visited.has(nodeId)) {
+        visited.add(nodeId)
+        currentLayer.push(nodeId)
+        
+        // 添加下一层节点
+        const children = adjacencyMap.get(nodeId) || []
+        children.forEach(childId => {
+          const newInDegree = (inDegreeMap.get(childId) || 0) - 1
+          inDegreeMap.set(childId, newInDegree)
+          if (newInDegree === 0 && !visited.has(childId)) {
+            nextQueue.push(childId)
+          }
+        })
+      }
+    }
+    
+    if (currentLayer.length > 0) {
+      layers.push(currentLayer)
+      queue.push(...nextQueue)
+    }
+  }
+  
+  // 处理剩余未访问的节点（循环依赖等）
+  const unvisitedNodes = nodes.filter(node => !visited.has(node.id))
+  if (unvisitedNodes.length > 0) {
+    layers.push(unvisitedNodes.map(node => node.id))
+  }
+  
+  // 计算位置
+  const nodeSpacing = { x: 350, y: 150 }
+  const startOffset = { x: 100, y: 100 }
+  
+  const layoutNodes: Array<any & { position: { x: number; y: number } }> = []
+  
+  layers.forEach((layer, layerIndex) => {
+    const layerY = startOffset.y + layerIndex * nodeSpacing.y
+    const layerStartX = startOffset.x - ((layer.length - 1) * nodeSpacing.x) / 2
+    
+    layer.forEach((nodeId, nodeIndex) => {
+      const node = nodeMap.get(nodeId)
+      if (node) {
+        layoutNodes.push({
+          ...node,
+          position: {
+            x: layerStartX + nodeIndex * nodeSpacing.x,
+            y: layerY
+          }
+        })
+      }
+    })
+  })
+  
+  return layoutNodes
+}
+
 interface WorkflowEditorState {
   // 当前工作流数据
   workflow: WorkflowResponse | null
@@ -29,6 +134,7 @@ interface WorkflowEditorState {
   updateNode: (nodeId: string, nodeData: Partial<TreeNodeConfig>) => void
   addNode: (nodeType: NodeType, position?: { x: number; y: number }) => void
   removeNode: (nodeId: string) => void
+  removeNodes: (nodeIds: string[]) => void
   
   // 工具方法
   getWorkflowData: () => {
@@ -64,14 +170,17 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
         set({ workflow, isLoading: false })
         
         if (workflow?.nodes) {
-          // 转换后端数据为 React Flow 格式
-          const nodes = Object.values(workflow.nodes).map((node: any, index) => ({
+          // 转换后端数据为 React Flow 格式，使用更智能的布局算法
+          const nodeArray = Object.values(workflow.nodes) as any[]
+          const edges = workflow.edges || []
+          
+          // 创建布局映射
+          const layoutNodes = createWorkflowLayout(nodeArray, edges)
+          
+          const nodes = layoutNodes.map((node) => ({
             id: node.id,
             type: 'workflowNode',
-            position: {
-              x: node.node_type === 'START' ? 0 : 300 + (index * 300),
-              y: 100 + (index % 3) * 150 // 错列显示，避免重叠
-            },
+            position: node.position,
             data: {
               label: node.name,
               description: node.description,
@@ -80,7 +189,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             },
           }))
 
-          const edges = (workflow.edges || []).map((edge: any, index) => ({
+          const workflowEdges = (workflow.edges || []).map((edge: any, index) => ({
             id: `edge-${index}`,
             source: edge.from_node,
             target: edge.to_node,
@@ -91,7 +200,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
             },
           }))
 
-          set({ nodes, edges })
+          set({ nodes, edges: workflowEdges })
         }
       },
 
@@ -156,6 +265,26 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
         const updatedNodes = nodes.filter(node => node.id !== nodeId)
         const updatedEdges = edges.filter(edge => 
           edge.source !== nodeId && edge.target !== nodeId
+        )
+        
+        set({ 
+          nodes: updatedNodes, 
+          edges: updatedEdges, 
+          hasUnsavedChanges: true 
+        })
+      },
+
+      // 批量删除节点
+      removeNodes: (nodeIds) => {
+        const { nodes, edges } = get()
+        const nodeIdSet = new Set(nodeIds)
+        
+        // 过滤掉要删除的节点
+        const updatedNodes = nodes.filter(node => !nodeIdSet.has(node.id))
+        
+        // 过滤掉与删除节点相关的边
+        const updatedEdges = edges.filter(edge => 
+          !nodeIdSet.has(edge.source) && !nodeIdSet.has(edge.target)
         )
         
         set({ 

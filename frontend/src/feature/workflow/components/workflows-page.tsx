@@ -1,11 +1,10 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from '@tanstack/react-router'
-import { Plus, Search, Filter, Grid, List } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Filter, Grid, List, Plus, Search } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -13,14 +12,16 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { useWorkflows, useRunWorkflow, useDeleteWorkflow } from '../hooks'
-import { WorkflowStatus, type WorkflowListItem } from '@/types/workflow'
+import { type WorkflowListItem, WorkflowStatus } from '@/types/workflow'
 
-import { WorkflowSidebar } from './workflow-sidebar'
+import { useDeleteWorkflow, useRunWorkflow, useWorkflows } from '../hooks'
+
+import { CreateWorkflowDialog } from './create-workflow-dialog'
 import { WorkflowCard } from './workflow-card'
 import { WorkflowEmptyState } from './workflow-empty-state'
-import { CreateWorkflowDialog } from './create-workflow-dialog'
+import { WorkflowSidebar } from './workflow-sidebar'
 
 export function WorkflowsPage() {
   const navigate = useNavigate()

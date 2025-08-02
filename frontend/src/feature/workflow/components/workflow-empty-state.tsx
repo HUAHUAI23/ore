@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Plus, Workflow, Sparkles, ArrowRight } from 'lucide-react'
+import { ArrowRight, Plus, Sparkles, Workflow } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -98,7 +98,7 @@ export function WorkflowEmptyState({ onCreateWorkflow }: WorkflowEmptyStateProps
                 >
                   <Workflow className="w-10 h-10 text-white" />
                 </motion.div>
-                
+
                 {/* 装饰性图标 */}
                 <motion.div
                   animate={{

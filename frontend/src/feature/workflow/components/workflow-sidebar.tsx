@@ -1,12 +1,12 @@
 import { motion } from 'framer-motion'
-import { 
-  Workflow, 
-  Plus, 
-  Search, 
-  Filter, 
+import {
+  Filter,
+  LogOut,
+  Plus,
+  Search,
   Settings,
   User,
-  LogOut
+  Workflow
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -21,8 +21,8 @@ interface WorkflowSidebarProps {
 export function WorkflowSidebar({ className }: WorkflowSidebarProps) {
   const sidebarVariants = {
     hidden: { x: -280, opacity: 0 },
-    visible: { 
-      x: 0, 
+    visible: {
+      x: 0,
       opacity: 1,
       transition: {
         duration: 0.3,
@@ -70,7 +70,7 @@ export function WorkflowSidebar({ className }: WorkflowSidebarProps) {
 
       {/* 快速操作 */}
       <div className="px-4 pb-3">
-        <Button 
+        <Button
           className="w-full justify-start gap-2 bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
           size="sm"
         >
@@ -95,8 +95,8 @@ export function WorkflowSidebar({ className }: WorkflowSidebarProps) {
                 variant={item.active ? "default" : "ghost"}
                 className={cn(
                   "w-full justify-start gap-3 h-10",
-                  item.active 
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                  item.active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
@@ -131,8 +131,8 @@ export function WorkflowSidebar({ className }: WorkflowSidebarProps) {
                   size="sm"
                   className={cn(
                     "w-full justify-between h-8 px-3",
-                    filter.active 
-                      ? "bg-sidebar-accent/50 text-sidebar-accent-foreground" 
+                    filter.active
+                      ? "bg-sidebar-accent/50 text-sidebar-accent-foreground"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground"
                   )}
                 >
