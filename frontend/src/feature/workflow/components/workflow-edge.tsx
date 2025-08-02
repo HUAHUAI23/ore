@@ -7,7 +7,7 @@ import {
   useReactFlow
 } from '@xyflow/react'
 import { motion } from 'framer-motion'
-import { Settings, X } from 'lucide-react'
+import { X } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -66,52 +66,49 @@ export const WorkflowEdge = memo(({
       />
 
       <EdgeLabelRenderer>
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
+        <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-            fontSize: 12,
             pointerEvents: 'all',
           }}
           className="nodrag nopan"
         >
-          <div className="flex items-center gap-2 bg-background border border-border rounded-lg shadow-sm px-2 py-1">
-            {hasCondition && (
+          {/* 条件标签 */}
+          {hasCondition && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="mb-2"
+            >
               <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
                 {edgeData?.condition?.match_type}: {edgeData?.condition?.match_value}
               </Badge>
-            )}
-
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 hover:bg-muted"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  // TODO: 打开边配置对话框
-                }}
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-5 w-5 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onEdgeClick()
-                }}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
+          )}
+          
+          {/* 删除按钮 - 始终在边的中间显示 */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="flex justify-center"
+          >
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-6 w-6 p-0 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-md"
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdgeClick()
+              }}
+              title="删除连接线"
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </motion.div>
+        </div>
       </EdgeLabelRenderer>
     </>
   )

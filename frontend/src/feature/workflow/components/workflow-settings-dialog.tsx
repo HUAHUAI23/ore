@@ -41,7 +41,6 @@ import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
-import { cn } from '@/lib/utils'
 import { WorkflowStatus } from '@/types/workflow'
 import { workflowUpdateSchema, type WorkflowUpdateFormValues } from '@/validation/workflow'
 
@@ -325,6 +324,7 @@ export function WorkflowSettingsDialog({
                       </div>
                     </div>
                   </div>
+
                 </motion.div>
               </TabsContent>
 

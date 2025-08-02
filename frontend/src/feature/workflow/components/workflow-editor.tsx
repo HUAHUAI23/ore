@@ -1,24 +1,24 @@
 import React, { useCallback, useMemo, useRef } from 'react'
 import type {
   Connection,
-  Edge,
   EdgeTypes,
-  Node,
   NodeTypes,
+  NodeChange,
+  EdgeChange,
 } from '@xyflow/react'
 import {
-  addEdge,
   Background,
   Controls,
   MiniMap,
   ReactFlow,
-  useEdgesState,
-  useNodesState,
   useReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from '@xyflow/react'
 import { motion } from 'framer-motion'
 
 import { cn } from '@/lib/utils'
+import { useWorkflowEditorStore } from '@/stores/workflow-editor'
 import type { WorkflowResponse } from '@/types/workflow'
 import { NodeType } from '@/types/workflow'
 
@@ -36,64 +36,20 @@ interface WorkflowNodeData extends Record<string, unknown> {
 
 interface WorkflowEditorProps {
   workflow?: WorkflowResponse
-  onNodesChange?: (nodes: Node[]) => void
-  onEdgesChange?: (edges: Edge[]) => void
   onAddNode?: (nodeType: NodeType) => void
   onEditNode?: (nodeId: string, nodeData: WorkflowNodeData) => void
   className?: string
 }
 
 export function WorkflowEditor({
-  workflow,
-  onNodesChange,
-  onEdgesChange,
+  workflow: _workflow,
   onAddNode: _onAddNode,
   onEditNode,
   className
 }: WorkflowEditorProps) {
-  // 转换工作流数据为React Flow格式
-  const initialNodes = useMemo(() => {
-    if (!workflow?.nodes) return []
-
-    return Object.values(workflow.nodes).map((node: unknown, index) => {
-      const nodeData = node as Record<string, unknown>
-      return {
-        id: nodeData.id as string,
-        type: 'workflowNode',
-        position: {
-          x: index * 200,
-          y: nodeData.node_type === NodeType.START ? 0 : 100 + (index * 100)
-        },
-        data: {
-          label: nodeData.name as string,
-          description: nodeData.description as string,
-          prompt: nodeData.prompt as string,
-          nodeType: nodeData.node_type as NodeType,
-        },
-      }
-    })
-  }, [workflow?.nodes])
-
-  const initialEdges = useMemo(() => {
-    if (!workflow?.edges) return []
-
-    return workflow.edges.map((edge: unknown, index) => {
-      const edgeData = edge as Record<string, unknown>
-      return {
-        id: `edge-${index}`,
-        source: edgeData.from_node as string,
-        target: edgeData.to_node as string,
-        type: 'workflowEdge',
-        data: {
-          condition: edgeData.condition,
-          inputConfig: edgeData.input_config,
-        },
-      }
-    })
-  }, [workflow?.edges])
-
-  const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes)
-  const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges)
+  // 使用 Zustand store
+  const { nodes, edges, setNodes, setEdges } = useWorkflowEditorStore()
+  // React Flow 相关 hooks
   const { screenToFlowPosition } = useReactFlow()
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
 
@@ -108,8 +64,9 @@ export function WorkflowEditor({
   }), [])
 
   const onConnect = useCallback((params: Connection) => {
-    setEdges((eds) => addEdge({
+    const newEdge = {
       ...params,
+      id: `edge-${Date.now()}`,
       type: 'workflowEdge',
       data: {
         condition: null,
@@ -118,8 +75,9 @@ export function WorkflowEditor({
           include_previous_output: true,
         },
       },
-    }, eds))
-  }, [setEdges])
+    }
+    setEdges([...edges, newEdge])
+  }, [setEdges, edges])
 
   // 创建新节点
   const createNode = useCallback((nodeType: NodeType, position?: { x: number; y: number }) => {
@@ -167,9 +125,9 @@ export function WorkflowEditor({
       },
     }
 
-    setNodes((nds) => [...nds, newNode])
+    setNodes([...nodes, newNode])
     return newNode
-  }, [setNodes])
+  }, [setNodes, nodes])
 
   // 处理拖拽放置
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -195,23 +153,16 @@ export function WorkflowEditor({
   }, [screenToFlowPosition, createNode])
 
   // 处理节点变化
-  const handleNodesChange = useCallback((changes: unknown) => {
-    onNodesChangeInternal(changes as never)
-  }, [onNodesChangeInternal])
+  const handleNodesChange = useCallback((changes: NodeChange[]) => {
+    const updatedNodes = applyNodeChanges(changes, nodes)
+    setNodes(updatedNodes)
+  }, [nodes, setNodes])
 
   // 处理边变化
-  const handleEdgesChange = useCallback((changes: unknown) => {
-    onEdgesChangeInternal(changes as never)
-  }, [onEdgesChangeInternal])
-
-  // 当节点或边发生变化时，通知父组件
-  React.useEffect(() => {
-    onNodesChange?.(nodes)
-  }, [nodes, onNodesChange])
-
-  React.useEffect(() => {
-    onEdgesChange?.(edges)
-  }, [edges, onEdgesChange])
+  const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
+    const updatedEdges = applyEdgeChanges(changes, edges)
+    setEdges(updatedEdges)
+  }, [edges, setEdges])
 
 
 
@@ -245,8 +196,7 @@ export function WorkflowEditor({
         multiSelectionKeyCode={["Meta", "Ctrl"]}
         panOnDrag={[1, 2]}
         selectionOnDrag
-        snapToGrid
-        snapGrid={[20, 20]}
+        snapToGrid={false}
       >
         <Background
           color="#e2e8f0"

@@ -1,6 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import type { Edge, Node } from '@xyflow/react'
 import { ReactFlowProvider } from '@xyflow/react'
 import { motion } from 'framer-motion'
 import {
@@ -19,6 +18,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useWorkflowEditorStore } from '@/stores/workflow-editor'
 import { NodeType, WorkflowStatus } from '@/types/workflow'
 import type { TreeNodeConfigFormValues, WorkflowUpdateFormValues } from '@/validation/workflow'
 
@@ -38,8 +38,6 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
   const navigate = useNavigate()
   const [showExecutionSidebar, setShowExecutionSidebar] = useState(false)
   const [showNodePanel, setShowNodePanel] = useState(true)
-  const [currentNodes, setCurrentNodes] = useState<Node[]>([])
-  const [currentEdges, setCurrentEdges] = useState<Edge[]>([])
 
   // 对话框状态
   const [nodeEditDialog, setNodeEditDialog] = useState<{
@@ -55,10 +53,36 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
 
   const [settingsDialog, setSettingsDialog] = useState(false)
 
+  // Zustand store
+  const {
+    workflow: storeWorkflow,
+    hasUnsavedChanges,
+    setWorkflow,
+    updateNode,
+    addNode,
+    getWorkflowData,
+    markAsSaved,
+    reset
+  } = useWorkflowEditorStore()
+
   // 获取工作流数据
   const { data: workflow, isLoading, error } = useWorkflow(workflowId)
   const updateWorkflowMutation = useUpdateWorkflow(workflowId)
   const runWorkflowMutation = useRunWorkflow(workflowId)
+
+  // 当工作流数据加载完成时，更新 store
+  useEffect(() => {
+    if (workflow) {
+      setWorkflow(workflow)
+    }
+  }, [workflow, setWorkflow])
+
+  // 组件卸载时重置 store
+  useEffect(() => {
+    return () => {
+      reset()
+    }
+  }, [reset])
 
   const handleBack = () => {
     navigate({ to: '/workflows' })
@@ -67,45 +91,15 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
   const handleSave = () => {
     if (!workflow) return
 
-    // 如果有节点数据，则保存；否则保存当前工作流状态
-    if (currentNodes.length > 0) {
-      // 转换节点数据为后端格式
-      const nodes = currentNodes.reduce((acc, node) => {
-        acc[node.id] = {
-          id: node.id,
-          name: (node.data?.label as string) || node.id,
-          description: (node.data?.description as string) || '',
-          prompt: (node.data?.prompt as string) || '',
-          node_type: (node.data?.nodeType as NodeType) || NodeType.INTERMEDIATE,
-        }
-        return acc
-      }, {} as Record<string, {
-        id: string
-        name: string
-        description: string
-        prompt: string
-        node_type: NodeType
-      }>)
+    // 从 Zustand store 获取最新的工作流数据
+    const workflowData = getWorkflowData()
 
-      // 转换边数据为后端格式
-      const edges = currentEdges.map((edge) => ({
-        from_node: edge.source,
-        to_node: edge.target,
-        condition: (edge.data?.condition as any) || null,
-        input_config: (edge.data?.inputConfig as any) || {
-          include_prompt: true,
-          include_previous_output: true,
-        },
-      }))
-
-      updateWorkflowMutation.mutate({
-        nodes,
-        edges,
-      })
-    } else {
-      // 如果没有编辑器数据，只更新基本信息
-      updateWorkflowMutation.mutate({})
-    }
+    updateWorkflowMutation.mutate(workflowData, {
+      onSuccess: () => {
+        // 保存成功后标记为已保存
+        markAsSaved()
+      }
+    })
   }
 
   const handleRun = () => {
@@ -113,8 +107,8 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
   }
 
   // 处理添加节点
-  const handleAddNode = (_nodeType: NodeType) => {
-    // 添加节点逻辑已在WorkflowEditor组件中实现
+  const handleAddNode = (nodeType: NodeType) => {
+    addNode(nodeType)
   }
 
   // 处理节点编辑
@@ -137,9 +131,15 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
   }
 
   // 保存节点配置
-  const handleSaveNodeConfig = async (_data: TreeNodeConfigFormValues) => {
-    // TODO: 实现节点配置更新逻辑
-    // 这里应该调用API更新节点配置
+  const handleSaveNodeConfig = async (data: TreeNodeConfigFormValues) => {
+    // 使用 Zustand store 更新节点数据
+    updateNode(data.id, {
+      name: data.name,
+      description: data.description,
+      prompt: data.prompt,
+      node_type: data.node_type,
+    })
+
     setNodeEditDialog({ open: false })
   }
 
@@ -274,11 +274,11 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
               variant="outline"
               size="sm"
               onClick={handleSave}
-              disabled={updateWorkflowMutation.isPending}
+              disabled={updateWorkflowMutation.isPending || !hasUnsavedChanges}
               className="gap-2"
             >
               <Save className="w-4 h-4" />
-              {updateWorkflowMutation.isPending ? '保存中...' : '保存'}
+              {updateWorkflowMutation.isPending ? '保存中...' : hasUnsavedChanges ? '保存' : '已保存'}
             </Button>
 
             <Button
@@ -323,25 +323,21 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
         >
           <ReactFlowProvider>
             <WorkflowEditor
-              workflow={workflow}
-              onNodesChange={(nodes) => {
-                setCurrentNodes(nodes)
-              }}
-              onEdgesChange={(edges) => {
-                setCurrentEdges(edges)
-              }}
+              workflow={storeWorkflow || undefined}
               onAddNode={handleAddNode}
               onEditNode={handleNodeEdit}
             />
           </ReactFlowProvider>
         </motion.div>
 
-        {/* 执行历史侧边栏 */}
-        <WorkflowExecutionSidebar
-          workflowId={workflowId}
-          isOpen={showExecutionSidebar}
-          onClose={() => setShowExecutionSidebar(false)}
-        />
+        {/* 执行历史侧边栏 - 只在打开时渲染 */}
+        {showExecutionSidebar && (
+          <WorkflowExecutionSidebar
+            workflowId={workflowId}
+            isOpen={showExecutionSidebar}
+            onClose={() => setShowExecutionSidebar(false)}
+          />
+        )}
       </div>
 
       {/* 节点编辑对话框 */}

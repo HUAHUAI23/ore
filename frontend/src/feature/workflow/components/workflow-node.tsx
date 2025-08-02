@@ -151,7 +151,7 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
       {data.nodeType !== NodeType.START && (
         <Handle
           type="target"
-          position={Position.Top}
+          position={Position.Left}
           className="w-3 h-3 bg-border border-2 border-background"
         />
       )}
@@ -159,7 +159,7 @@ export const WorkflowNode = memo(({ id, data, selected, ...props }: WorkflowNode
       {data.nodeType !== NodeType.LEAF && (
         <Handle
           type="source"
-          position={Position.Bottom}
+          position={Position.Right}
           className="w-3 h-3 bg-border border-2 border-background"
         />
       )}

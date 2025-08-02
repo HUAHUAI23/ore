@@ -164,13 +164,17 @@ export const useWorkflowExecutions = (
   params?: {
     skip?: number
     limit?: number
+  },
+  options?: {
+    enabled?: boolean
+    refetchInterval?: number | false
   }
 ) => {
   return useQuery({
     queryKey: workflowKeys.executions(workflowId),
     queryFn: () => workflowApi.getWorkflowExecutions(workflowId, params),
-    enabled: !!workflowId,
-    refetchInterval: 5000, // 每5秒刷新一次执行状态
+    enabled: (options?.enabled ?? true) && !!workflowId,
+    refetchInterval: options?.refetchInterval ?? 5000, // 默认每5秒刷新一次执行状态
     staleTime: 1000, // 1秒后数据过期，确保及时更新执行状态
   })
 }

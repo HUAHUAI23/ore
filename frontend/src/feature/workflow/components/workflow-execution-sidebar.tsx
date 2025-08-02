@@ -1,28 +1,28 @@
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  X, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import { formatDistanceToNow } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
+import { AnimatePresence, motion } from 'framer-motion'
+import {
+  Calendar,
+  CheckCircle,
+  Clock,
   Pause,
   Play,
   RotateCcw,
-  Calendar,
-  TrendingUp
+  TrendingUp,
+  X,
+  XCircle
 } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
-import { zhCN } from 'date-fns/locale'
 
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import { useWorkflowExecutions } from '../hooks'
 import { ExecutionStatus, type WorkflowExecutionListItem } from '@/types/workflow'
+
+import { useWorkflowExecutions } from '../hooks'
 
 import { WorkflowExecutionDialog } from './workflow-execution-dialog'
 
@@ -32,16 +32,19 @@ interface WorkflowExecutionSidebarProps {
   onClose: () => void
 }
 
-export function WorkflowExecutionSidebar({ 
-  workflowId, 
-  isOpen, 
-  onClose 
+export function WorkflowExecutionSidebar({
+  workflowId,
+  isOpen,
+  onClose
 }: WorkflowExecutionSidebarProps) {
   const [selectedExecution, setSelectedExecution] = useState<number | null>(null)
 
-  // 获取执行历史
+  // 获取执行历史 - 只在侧边栏打开时启用查询和轮询
   const { data: executionsData, isLoading } = useWorkflowExecutions(workflowId, {
     limit: 50
+  }, {
+    enabled: isOpen, // 只在侧边栏打开时启用查询
+    // refetchInterval 使用默认值（5秒），但只在 enabled=true 时生效
   })
 
   const executions = executionsData?.items || []
@@ -106,8 +109,8 @@ export function WorkflowExecutionSidebar({
 
   const sidebarVariants = {
     hidden: { x: '100%', opacity: 0 },
-    visible: { 
-      x: 0, 
+    visible: {
+      x: 0,
       opacity: 1,
       transition: {
         type: 'spring',
@@ -115,8 +118,8 @@ export function WorkflowExecutionSidebar({
         stiffness: 300
       }
     },
-    exit: { 
-      x: '100%', 
+    exit: {
+      x: '100%',
       opacity: 0,
       transition: {
         duration: 0.2
@@ -226,8 +229,8 @@ export function WorkflowExecutionSidebar({
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <StatusIcon className={cn("w-4 h-4", statusConfig.color)} />
-                              <Badge 
-                                variant="secondary" 
+                              <Badge
+                                variant="secondary"
                                 className={cn("text-xs", statusConfig.bgColor, statusConfig.color)}
                               >
                                 {statusConfig.label}
@@ -248,8 +251,8 @@ export function WorkflowExecutionSidebar({
                                 {Math.round(progress)}%
                               </span>
                             </div>
-                            <Progress 
-                              value={progress} 
+                            <Progress
+                              value={progress}
                               className="h-1.5"
                             />
                           </div>
@@ -260,21 +263,21 @@ export function WorkflowExecutionSidebar({
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Calendar className="w-3 h-3" />
                                 <span>
-                                  开始于 {formatDistanceToNow(new Date(execution.started_at), { 
-                                    addSuffix: true, 
-                                    locale: zhCN 
+                                  开始于 {formatDistanceToNow(new Date(execution.started_at), {
+                                    addSuffix: true,
+                                    locale: zhCN
                                   })}
                                 </span>
                               </div>
                             )}
-                            
+
                             {execution.completed_at && (
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Clock className="w-3 h-3" />
                                 <span>
-                                  完成于 {formatDistanceToNow(new Date(execution.completed_at), { 
-                                    addSuffix: true, 
-                                    locale: zhCN 
+                                  完成于 {formatDistanceToNow(new Date(execution.completed_at), {
+                                    addSuffix: true,
+                                    locale: zhCN
                                   })}
                                 </span>
                               </div>
