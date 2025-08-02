@@ -55,55 +55,62 @@ export const WorkflowEdge = memo(({
 
   return (
     <>
-      {/* 连接线 */}
-      <g
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        style={{ cursor: 'pointer' }}
-      >
-        <BaseEdge
-          path={edgePath}
-          markerEnd={markerEnd}
-          style={{
-            ...(style || {}),
-            strokeWidth: selected || isHovered ? 3 : 2,
-            stroke: hasCondition ? '#3b82f6' : (selected || isHovered ? '#374151' : '#6b7280'),
-          }}
-        />
-        {/* 透明的宽边，便于鼠标交互 */}
-        <path
-          d={edgePath}
-          fill="none"
-          stroke="transparent"
-          strokeWidth="20"
-          style={{ cursor: 'pointer' }}
-        />
-      </g>
+      {/* 连接线主体 */}
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...(style || {}),
+          strokeWidth: selected || isHovered ? 3 : 2,
+          stroke: hasCondition ? '#3b82f6' : (selected || isHovered ? '#374151' : '#6b7280'),
+        }}
+      />
 
-      {/* 删除按钮 - 悬停或选中时显示 */}
+      {/* 整体悬停区域 - 包含连接线和按钮 */}
       <EdgeLabelRenderer>
         <div
           style={{
             position: 'absolute',
             transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
             pointerEvents: 'all',
-            opacity: (isHovered || selected) ? 1 : 0,
-            transition: 'opacity 0.2s ease-in-out',
+            width: '60px',
+            height: '60px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
           className="nodrag nopan"
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <button
-            className="w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
+            className={`w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110 ${
+              (isHovered || selected) ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+            }`}
             onClick={(e) => {
               e.stopPropagation()
               onEdgeClick()
             }}
             title="删除连接线"
+            style={{
+              transition: 'all 0.2s ease-in-out',
+            }}
           >
-            <X className="w-3 h-3" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </EdgeLabelRenderer>
+
+      {/* 大范围透明悬停区域 */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth="30"
+        style={{ cursor: 'pointer' }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      />
 
       {/* 条件标签 - 仅在有条件时显示 */}
       {hasCondition && (
