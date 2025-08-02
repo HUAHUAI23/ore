@@ -1,6 +1,6 @@
 """
 Authentication service for user login and registration.
-现代化SQLModel版本 - 使用最佳实践
+现代化SQLModel版本 - 支持时区感知的版本
 """
 
 from datetime import datetime, timezone
@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import or_, and_
+from sqlalchemy import or_
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 
@@ -36,7 +36,34 @@ logger = get_logger(__name__)
 
 
 class AuthService:
-    """Authentication service for handling user operations."""
+    """Authentication service for handling user operations - 时区感知版本."""
+
+    # ============================================
+    # 时间工具方法 - 新增
+    # ============================================
+
+    @staticmethod
+    def get_current_utc_time() -> datetime:
+        """获取当前UTC时间 - 时区感知版本"""
+        return datetime.now(timezone.utc)
+
+    @staticmethod
+    def ensure_timezone_aware(dt: Optional[datetime]) -> Optional[datetime]:
+        """
+        确保datetime对象是时区感知的
+
+        Args:
+            dt: 可能为None的datetime对象
+
+        Returns:
+            时区感知的datetime对象，如果输入为None则返回None
+        """
+        if dt is None:
+            return None
+        if dt.tzinfo is None:
+            # 如果是naive datetime，假设它是UTC
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
 
     # ============================================
     # 基础查询方法 - 现代化查询
@@ -104,7 +131,7 @@ class AuthService:
     async def create_user(
         session: AsyncSession, user_create: UserCreateRequest
     ) -> User:
-        """Create a new user - 现代化版本"""
+        """Create a new user - 时区感知版本"""
 
         # 预检查用户是否存在
         exists, conflict_field = await AuthService.check_user_exists(
@@ -123,10 +150,9 @@ class AuthService:
                 detail=error_messages[conflict_field],
             )
 
-        # 使用UTC时间
         password_hash = get_password_hash(user_create.password)
 
-        # 创建用户实例
+        # 创建用户实例 - created_at 和 updated_at 会自动由数据库设置
         db_user = User(
             name=user_create.name,
             nickname=user_create.nickname or user_create.name,
@@ -134,7 +160,7 @@ class AuthService:
             phone=user_create.phone,
             is_active=True,
             password_hash=password_hash,
-            # created_at 会自动设置为 func.now()
+            # created_at 和 updated_at 由数据库自动设置
         )
 
         try:
@@ -219,9 +245,9 @@ class AuthService:
 
     @staticmethod
     async def update_last_login(session: AsyncSession, user: User) -> User:
-        """Update user's last login timestamp - 返回更新后的用户"""
-        # 使用UTC时间
-        user.last_login = datetime.now(timezone.utc)
+        """Update user's last login timestamp - 时区感知版本"""
+        # 使用时区感知的UTC时间
+        user.last_login = AuthService.get_current_utc_time()
         session.add(user)
         await session.commit()
         await session.refresh(user)
@@ -233,13 +259,21 @@ class AuthService:
 
     @staticmethod
     def create_user_token(user: User) -> str:
-        """Create access token for user - 独立的token创建方法"""
+        """Create access token for user - 时区感知版本"""
         if user.id is None:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="用户ID缺失"
             )
 
-        # 在token中包含用户基本信息
+        # 安全的时间格式化辅助函数
+        def safe_isoformat(dt: Optional[datetime]) -> Optional[str]:
+            """安全地将datetime转换为ISO格式字符串"""
+            if dt is None:
+                return None
+            timezone_aware_dt = AuthService.ensure_timezone_aware(dt)
+            return timezone_aware_dt.isoformat() if timezone_aware_dt else None
+
+        # 在token中包含用户基本信息 - 处理时区感知的时间
         user_claims = {
             "user_id": user.id,
             "name": user.name,
@@ -247,12 +281,12 @@ class AuthService:
             "email": user.email,
             "phone": user.phone,
             "is_active": user.is_active,
-            "last_login": user.last_login.isoformat() if user.last_login else None,
+            "created_at": safe_isoformat(user.created_at),
+            "updated_at": safe_isoformat(user.updated_at),
+            "last_login": safe_isoformat(user.last_login),
         }
 
-        return create_access_token(
-            subject=str(user.id), additional_claims=user_claims  # 转换为字符串，更安全
-        )
+        return create_access_token(subject=str(user.id), additional_claims=user_claims)
 
     # ============================================
     # 高级业务方法 - 现代化实现
@@ -263,7 +297,7 @@ class AuthService:
         session: AsyncSession, login_data: UserLoginRequest
     ) -> tuple[User, str]:
         """
-        Login user - 现代化版本
+        Login user - 时区感知版本
 
         Returns:
             Tuple of (user, access_token)
@@ -307,7 +341,7 @@ class AuthService:
         session: AsyncSession, user_create: UserCreateRequest
     ) -> tuple[User, str]:
         """
-        Register a new user - 现代化版本
+        Register a new user - 时区感知版本
 
         Returns:
             Tuple of (user, access_token)
@@ -389,25 +423,27 @@ class AuthService:
         user.password_hash = get_password_hash(new_password)
         session.add(user)
         await session.commit()
+        # updated_at 会自动更新
 
         logger.info(f"Password changed for user: {user.name} (ID: {user_id})")
         return True
 
     @staticmethod
     async def get_user_stats(session: AsyncSession, user_id: int) -> Optional[dict]:
-        """获取用户统计信息"""
+        """获取用户统计信息 - 时区感知版本"""
         user = await AuthService.get_user_by_id(session, user_id)
         if not user:
             return None
 
-        # 可以添加更多统计信息，比如工作流数量等
+        # 确保时间字段的时区处理
         return {
             "user_id": user.id,
             "name": user.name,
             "email": user.email,
             "is_active": user.is_active,
-            "created_at": user.created_at,
-            "last_login": user.last_login,
+            "created_at": AuthService.ensure_timezone_aware(user.created_at),
+            "updated_at": AuthService.ensure_timezone_aware(user.updated_at),
+            "last_login": AuthService.ensure_timezone_aware(user.last_login),
             "has_email": bool(user.email),
             "has_phone": bool(user.phone),
         }

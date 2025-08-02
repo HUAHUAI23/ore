@@ -34,6 +34,7 @@ from pydantic import SecretStr
 from ...base.engine import BaseWorkflowEngine
 from ...workflow_types import NodeType
 from .types import (
+    TreeInputConfig,
     TreeNode,
     TreeEdge,
     Condition,
@@ -402,7 +403,7 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
                 continue
 
             # 准备输入数据并启动任务
-            input_data = self._prepare_node_input(target_node_id, edge)
+            input_data = self._prepare_node_input(target_node_id)
             task = asyncio.create_task(self.node_executor(target_node_id, input_data))
             self.running_tasks[target_node_id] = task
 
@@ -427,10 +428,18 @@ class TreeWorkflowEngine(BaseWorkflowEngine):
 
         return True
 
-    def _prepare_node_input(self, node_id: str, edge: TreeEdge) -> NodeInputData:
+    def _prepare_node_input(self, node_id: str) -> NodeInputData:
         """根据边配置准备节点输入"""
         node = self.nodes[node_id]
-        input_config = edge.input_config
+        # 获取节点的输入配置，提供默认值
+        input_config = getattr(
+            node,
+            "input_config",
+            TreeInputConfig(
+                include_prompt=True,
+                include_previous_output=True,
+            ),
+        )
 
         # 1. 任务提示词
         prompt = node.prompt if input_config.include_prompt else None

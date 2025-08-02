@@ -82,6 +82,10 @@ class TestWorkflowCoreAPI:
                     "description": "工作流开始",
                     "prompt": "",
                     "node_type": "START",
+                    "input_config": {
+                        "include_prompt": True,
+                        "include_previous_output": True,
+                    },
                 },
                 "content_classifier": {
                     "id": "content_classifier",
@@ -89,6 +93,10 @@ class TestWorkflowCoreAPI:
                     "description": "分析内容类型并输出分类结果",
                     "prompt": '请分析输入内容的类型，并明确输出分类结果。可能的类型：技术文章、营销文案、新闻报道、学术论文。请在回答开头明确说明："内容类型：[具体类型]"',
                     "node_type": "INTERMEDIATE",
+                    "input_config": {
+                        "include_prompt": True,
+                        "include_previous_output": True,
+                    },
                 },
                 "technical_processor": {
                     "id": "technical_processor",
@@ -96,6 +104,10 @@ class TestWorkflowCoreAPI:
                     "description": "专门处理技术类内容",
                     "prompt": "作为技术专家，请对以下技术内容进行深度分析和优化，包括技术准确性检查、代码示例优化、最佳实践建议等。",
                     "node_type": "LEAF",
+                    "input_config": {
+                        "include_prompt": True,
+                        "include_previous_output": True,
+                    },
                 },
                 "marketing_processor": {
                     "id": "marketing_processor",
@@ -103,6 +115,10 @@ class TestWorkflowCoreAPI:
                     "description": "专门处理营销类内容",
                     "prompt": "作为营销专家，请对以下营销内容进行优化，包括吸引力提升、转化率优化、受众定位分析等。",
                     "node_type": "LEAF",
+                    "input_config": {
+                        "include_prompt": True,
+                        "include_previous_output": True,
+                    },
                 },
                 "general_processor": {
                     "id": "general_processor",
@@ -110,6 +126,10 @@ class TestWorkflowCoreAPI:
                     "description": "处理其他类型内容",
                     "prompt": "请对以下内容进行通用优化，包括结构调整、语言润色、逻辑完善等。",
                     "node_type": "LEAF",
+                    "input_config": {
+                        "include_prompt": True,
+                        "include_previous_output": True,
+                    },
                 },
             },
             "edges": [
@@ -117,10 +137,6 @@ class TestWorkflowCoreAPI:
                     "from_node": "start",
                     "to_node": "content_classifier",
                     "condition": None,
-                    "input_config": {
-                        "include_prompt": True,
-                        "include_previous_output": True,
-                    },
                 },
                 {
                     "from_node": "content_classifier",
@@ -130,10 +146,6 @@ class TestWorkflowCoreAPI:
                         "match_type": "contains",
                         "match_value": "技术文章",
                         "case_sensitive": False,
-                    },
-                    "input_config": {
-                        "include_prompt": True,
-                        "include_previous_output": True,
                     },
                 },
                 {
@@ -145,10 +157,6 @@ class TestWorkflowCoreAPI:
                         "match_value": "营销文案",
                         "case_sensitive": False,
                     },
-                    "input_config": {
-                        "include_prompt": True,
-                        "include_previous_output": True,
-                    },
                 },
                 {
                     "from_node": "content_classifier",
@@ -158,10 +166,6 @@ class TestWorkflowCoreAPI:
                         "match_type": "not_contains",
                         "match_value": "技术文章",
                         "case_sensitive": False,
-                    },
-                    "input_config": {
-                        "include_prompt": True,
-                        "include_previous_output": True,
                     },
                 },
             ],

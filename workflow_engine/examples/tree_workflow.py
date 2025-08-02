@@ -32,6 +32,10 @@ async def main():
                 "description": "工作流开始",
                 "prompt": "",
                 "node_type": "START",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "topic_analysis": {
                 "id": "topic_analysis",
@@ -39,6 +43,10 @@ async def main():
                 "description": "分析用户输入的话题，提取关键要素和目标受众",
                 "prompt": "请分析以下话题，提取关键要素、目标受众和内容方向。要求输出结构化信息，包括：1. 核心主题 2. 目标受众 3. 内容角度 4. 关键词建议",
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "content_outline": {
                 "id": "content_outline",
@@ -46,6 +54,10 @@ async def main():
                 "description": "基于话题分析结果，生成详细的内容大纲",
                 "prompt": "基于上述话题分析，请生成一个详细的内容大纲。包括：1. 标题建议 2. 主要章节 3. 每章节的核心要点 4. 预期字数分配",
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "content_generation": {
                 "id": "content_generation",
@@ -53,6 +65,10 @@ async def main():
                 "description": "根据大纲生成完整的文章内容",
                 "prompt": "根据以上大纲，请生成完整的文章内容。要求：1. 逻辑清晰 2. 语言流畅 3. 信息准确 4. 符合目标受众需求",
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "seo_optimization": {
                 "id": "seo_optimization",
@@ -60,6 +76,10 @@ async def main():
                 "description": "SEO优化建议和元数据生成",
                 "prompt": "请为以上内容提供SEO优化建议，包括：1. 标题优化 2. 关键词密度调整 3. Meta描述 4. 内链建议 5. 图片alt标签建议",
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "quality_review": {
                 "id": "quality_review",
@@ -67,6 +87,10 @@ async def main():
                 "description": "内容质量审核和改进建议",
                 "prompt": "请对生成的内容进行质量审核，从以下维度评估：1. 内容准确性 2. 逻辑完整性 3. 语言质量 4. 用户体验 5. 改进建议",
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "final_output": {
                 "id": "final_output",
@@ -74,6 +98,10 @@ async def main():
                 "description": "整合所有结果，生成最终的内容包",
                 "prompt": "请整合以上所有内容，生成最终的内容交付包，包括：1. 最终文章 2. SEO元数据 3. 质量评估报告 4. 发布建议",
                 "node_type": "LEAF",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
         },
         "edges": [
@@ -81,64 +109,36 @@ async def main():
                 "from_node": "start",
                 "to_node": "topic_analysis",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "topic_analysis",
                 "to_node": "content_outline",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "content_outline",
                 "to_node": "content_generation",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "content_generation",
                 "to_node": "seo_optimization",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "content_generation",
                 "to_node": "quality_review",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "seo_optimization",
                 "to_node": "final_output",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "quality_review",
                 "to_node": "final_output",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
         ],
     }
@@ -243,6 +243,10 @@ async def demo_conditional_workflow():
                 "description": "工作流开始",
                 "prompt": "",
                 "node_type": "START",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "content_classifier": {
                 "id": "content_classifier",
@@ -250,6 +254,10 @@ async def demo_conditional_workflow():
                 "description": "分析内容类型并输出分类结果",
                 "prompt": '请分析输入内容的类型，并明确输出分类结果。可能的类型：技术文章、营销文案、新闻报道、学术论文。请在回答开头明确说明："内容类型：[具体类型]"',
                 "node_type": "INTERMEDIATE",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "technical_processor": {
                 "id": "technical_processor",
@@ -257,6 +265,10 @@ async def demo_conditional_workflow():
                 "description": "专门处理技术类内容",
                 "prompt": "作为技术专家，请对以下技术内容进行深度分析和优化，包括技术准确性检查、代码示例优化、最佳实践建议等。",
                 "node_type": "LEAF",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "marketing_processor": {
                 "id": "marketing_processor",
@@ -264,6 +276,10 @@ async def demo_conditional_workflow():
                 "description": "专门处理营销类内容",
                 "prompt": "作为营销专家，请对以下营销内容进行优化，包括吸引力提升、转化率优化、受众定位分析等。",
                 "node_type": "LEAF",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
             "general_processor": {
                 "id": "general_processor",
@@ -271,6 +287,10 @@ async def demo_conditional_workflow():
                 "description": "处理其他类型内容",
                 "prompt": "请对以下内容进行通用优化，包括结构调整、语言润色、逻辑完善等。",
                 "node_type": "LEAF",
+                "input_config": {
+                    "include_prompt": True,
+                    "include_previous_output": True,
+                },
             },
         },
         "edges": [
@@ -278,10 +298,6 @@ async def demo_conditional_workflow():
                 "from_node": "start",
                 "to_node": "content_classifier",
                 "condition": None,
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "content_classifier",
@@ -291,10 +307,6 @@ async def demo_conditional_workflow():
                     "match_type": "contains",
                     "match_value": "技术文章",
                     "case_sensitive": False,
-                },
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
                 },
             },
             {
@@ -306,10 +318,6 @@ async def demo_conditional_workflow():
                     "match_value": "营销文案",
                     "case_sensitive": False,
                 },
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
-                },
             },
             {
                 "from_node": "content_classifier",
@@ -319,10 +327,6 @@ async def demo_conditional_workflow():
                     "match_type": "not_contains",
                     "match_value": "技术文章",
                     "case_sensitive": False,
-                },
-                "input_config": {
-                    "include_prompt": True,
-                    "include_previous_output": True,
                 },
             },
         ],
