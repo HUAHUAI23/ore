@@ -4,7 +4,8 @@ import {
     Play,
     Plus,
     Target,
-    Workflow
+    Workflow,
+    X
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -16,9 +17,10 @@ import { NodeType } from '@/types/workflow'
 interface NodePanelProps {
     className?: string
     onAddNode: (nodeType: NodeType) => void
+    onClose?: () => void
 }
 
-export function NodePanel({ className, onAddNode }: NodePanelProps) {
+export function NodePanel({ className, onAddNode, onClose }: NodePanelProps) {
     const nodeTypes = [
         {
             type: NodeType.START,
@@ -58,18 +60,26 @@ export function NodePanel({ className, onAddNode }: NodePanelProps) {
         <motion.div
             initial={{ x: -300, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
+            exit={{ x: -300, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className={cn(
-                "w-72 bg-background border-r border-border h-full overflow-y-auto",
+                "absolute top-0 left-0 z-20 w-72 h-full bg-background/95 backdrop-blur-sm border-r border-border overflow-y-auto shadow-2xl",
                 className
             )}
         >
             <Card className="m-4 shadow-sm">
-                <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium flex items-center gap-2">
-                        <Plus className="w-4 h-4" />
-                        添加节点
-                    </CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">节点面板</CardTitle>
+                    {onClose && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={onClose}
+                            className="h-8 w-8 p-0"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    )}
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {nodeTypes.map((nodeType, index) => {

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ReactFlowProvider } from '@xyflow/react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   ArrowLeft,
   History,
-  PanelLeftClose,
   PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
@@ -242,20 +241,6 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowNodePanel(!showNodePanel)}
-              className="gap-2"
-            >
-              {showNodePanel ? (
-                <PanelLeftClose className="w-4 h-4" />
-              ) : (
-                <PanelLeftOpen className="w-4 h-4" />
-              )}
-              节点面板
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
               onClick={() => setShowExecutionSidebar(!showExecutionSidebar)}
               className="gap-2"
             >
@@ -305,21 +290,13 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
       </motion.div>
 
       {/* 主内容区域 */}
-      <div className="flex-1 flex">
-        {/* 节点面板 */}
-        {showNodePanel && (
-          <NodePanel
-            onAddNode={handleAddNode}
-          />
-        )}
-
+      <div className="flex-1 flex relative">
         {/* 工作流编辑器 */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className={`flex-1 transition-all duration-300 ${showNodePanel ? 'ml-0' : ''
-            } ${showExecutionSidebar ? 'mr-80' : ''}`}
+          className={`flex-1 transition-all duration-300 ${showExecutionSidebar ? 'mr-80' : ''} relative`}
         >
           <ReactFlowProvider>
             <WorkflowEditor
@@ -328,7 +305,37 @@ export function WorkflowEditorPage({ workflowId }: WorkflowEditorPageProps) {
               onEditNode={handleNodeEdit}
             />
           </ReactFlowProvider>
+
+          {/* 悬浮按钮 - 打开节点面板 */}
+          {!showNodePanel && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+              className="absolute top-4 left-4 z-10"
+            >
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNodePanel(true)}
+                className="gap-2 bg-background/95 backdrop-blur shadow-lg border-border/50"
+              >
+                <PanelLeftOpen className="w-4 h-4" />
+                节点面板
+              </Button>
+            </motion.div>
+          )}
         </motion.div>
+
+        {/* 悬浮节点面板 */}
+        <AnimatePresence>
+          {showNodePanel && (
+            <NodePanel
+              onAddNode={handleAddNode}
+              onClose={() => setShowNodePanel(false)}
+            />
+          )}
+        </AnimatePresence>
 
         {/* 执行历史侧边栏 - 只在打开时渲染 */}
         {showExecutionSidebar && (
