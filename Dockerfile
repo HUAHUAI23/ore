@@ -9,7 +9,7 @@ WORKDIR /app/frontend
 COPY frontend/package.json frontend/bun.lock ./
 
 # 安装前端依赖
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # 复制前端源码
 COPY frontend/ ./
