@@ -1,0 +1,110 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# 虚拟环境
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# 日志文件
+*.log
+logs/
+
+# 环境配置
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 测试
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
+
+# Node.js (前端)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/.turbo/
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+
+# 文档
+docs/
+*.md
+README.md
+
+# 输出文件
+workflow_outputs/
+
+# 其他
+.dockerignore
+Dockerfile*
+docker-compose*.yml
+
+# 开发工具配置
+.pre-commit-config.yaml
+.flake8
+.mypy.ini
+pyproject.toml
+
+# 测试文件
+backend/tests/
+frontend/src/**/*.test.*
+frontend/src/**/*.spec.*
+
+# 前端开发文件
+frontend/public/
+frontend/src/
+frontend/package.json
+frontend/bun.lock
+frontend/tsconfig.json
+frontend/vite.config.ts
+frontend/eslint.config.ts
+frontend/components.json
