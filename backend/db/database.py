@@ -17,13 +17,9 @@ engine = create_async_engine(
     pool_size=settings.database_pool_size,
     max_overflow=settings.database_max_overflow,
     echo=settings.database_echo,
+    # 通过 connect_args 设置 schema
+    # connect_args={"server_settings": {"search_path": "ore,public"}},
 )
-
-
-async def create_db_and_tables() -> None:
-    """Create database tables."""
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

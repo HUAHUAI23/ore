@@ -10,3 +10,6 @@ pip install -r requirements.txt
 tree -I "venv|__pycache__|.git|node_modules|*.pyc|*.pyo|.pytest_cache"
 
 pip install -e ".[dev]"
+
+alembic init alembic
+pip install -e ".[dev,test]"

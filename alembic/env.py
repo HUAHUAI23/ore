@@ -1,18 +1,20 @@
-"""
-Alembic环境配置文件 - 支持mapped_column的现代SQLModel
-"""
-
 from logging.config import fileConfig
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+
 from alembic import context
 
-# 导入target_metadata
+# 导入target_metadata 用于迁移
 from backend.models import target_metadata
+from config.backend_config import settings
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
+
+# 动态设置数据库URL
+config.set_main_option("sqlalchemy.url", settings.database_url)
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
@@ -23,14 +25,27 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-
-# 使用我们的target_metadata
 target_metadata = target_metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+
+# 添加这个函数
+def include_object(object, name, type_, reflected, compare_to):
+    """
+    根据名称和类型决定是否将一个对象纳入 autogenerate 的考虑范围。
+    """
+    if type_ == "table" and name == "postgres_log":
+        return False
+
+    # 如果你还有其他想忽略的表，可以在这里添加
+    # if type_ == "table" and name in ["spatial_ref_sys", "another_table"]:
+    #     return False
+
+    return True
 
 
 def run_migrations_offline() -> None:
@@ -43,6 +58,7 @@ def run_migrations_offline() -> None:
 
     Calls to context.execute() here emit the given string to the
     script output.
+
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
@@ -50,9 +66,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        # 支持枚举类型
-        compare_type=True,
-        compare_server_default=True,
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -64,6 +78,7 @@ def run_migrations_online() -> None:
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
+
     """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
@@ -75,11 +90,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            # 支持枚举类型和服务器默认值比较
-            compare_type=True,
-            compare_server_default=True,
-            # 渲染批处理操作（对SQLite很重要）
-            render_as_batch=True,
+            include_object=include_object,
         )
 
         with context.begin_transaction():
