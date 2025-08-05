@@ -18,9 +18,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWorkflowEditorStore } from '@/stores/workflow-editor'
+import type { ConditionConfig } from '@/types/workflow'
 import { NodeType, WorkflowStatus } from '@/types/workflow'
 import type { TreeNodeConfigFormValues, WorkflowUpdateFormValues } from '@/validation/workflow'
-import type { ConditionConfig } from '@/types/workflow'
 
 import { useRunWorkflow, useUpdateWorkflow, useWorkflow } from '../hooks'
 

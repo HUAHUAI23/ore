@@ -5,8 +5,8 @@ import tseslint from "typescript-eslint";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
 import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
-import prettierConfig from "eslint-config-prettier";
+import simpleImportSort from "eslint-plugin-simple-import-sort";  // 导入排序插件
+import prettierConfig from "eslint-config-prettier";  //  prettier 配置
 
 export default tseslint.config(
   // 基础 JavaScript 推荐配置

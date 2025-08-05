@@ -54,7 +54,7 @@ export function WorkflowEditor({
   className
 }: WorkflowEditorProps) {
   // 使用 Zustand store
-  const { nodes, edges, setNodes, setEdges, removeNodes } = useWorkflowEditorStore()
+  const { nodes, edges, setNodes, setEdges, removeNodes, updateNodePosition } = useWorkflowEditorStore()
   // React Flow 相关 hooks
   const { screenToFlowPosition } = useReactFlow()
   const reactFlowWrapper = useRef<HTMLDivElement>(null)
@@ -62,14 +62,14 @@ export function WorkflowEditor({
   // 选中的节点状态
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([])
 
-  // 自定义节点类型
+  // 自定义节点类型（修复类型断言）
   const nodeTypes: NodeTypes = useMemo(() => ({
-    workflowNode: WorkflowNode as never,
+    workflowNode: WorkflowNode,
   }), [])
 
-  // 自定义边类型
+  // 自定义边类型（修复类型断言）
   const edgeTypes: EdgeTypes = useMemo(() => ({
-    workflowEdge: WorkflowEdge as never,
+    workflowEdge: WorkflowEdge,
   }), [])
 
   const onConnect = useCallback((params: Connection) => {
@@ -81,8 +81,8 @@ export function WorkflowEditor({
       conditionIndex = parseInt(params.sourceHandle.split('-')[1])
       const sourceNode = nodes.find(n => n.id === params.source)
 
-      if (sourceNode && (sourceNode.data as any).conditions) {
-        const conditions = (sourceNode.data as any).conditions as ConditionConfig[]
+      if (sourceNode && sourceNode.data && 'conditions' in sourceNode.data) {
+        const conditions = sourceNode.data.conditions as ConditionConfig[]
 
         // 验证索引有效性
         if (conditionIndex >= 0 && conditionIndex < conditions.length) {
@@ -194,11 +194,18 @@ export function WorkflowEditor({
     createNode(nodeType, position)
   }, [screenToFlowPosition, createNode])
 
-  // 处理节点变化
+  // 处理节点变化（优化：监听位置变化并保存）
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     const updatedNodes = applyNodeChanges(changes, nodes)
     setNodes(updatedNodes)
-  }, [nodes, setNodes])
+    
+    // 检查是否有位置变化，如果有则更新位置
+    changes.forEach(change => {
+      if (change.type === 'position' && change.position) {
+        updateNodePosition(change.id, change.position)
+      }
+    })
+  }, [nodes, setNodes, updateNodePosition])
 
   // 处理边变化
   const handleEdgesChange = useCallback((changes: EdgeChange[]) => {
@@ -274,7 +281,9 @@ export function WorkflowEditor({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         onNodeDoubleClick={(_, node) => {
-          onEditNode?.(node.id, node.data as WorkflowNodeData)
+          if (node.data && typeof node.data === 'object') {
+            onEditNode?.(node.id, node.data as WorkflowNodeData)
+          }
         }}
         onSelectionChange={handleSelectionChange}
         fitView
