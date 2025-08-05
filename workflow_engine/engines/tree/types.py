@@ -67,6 +67,8 @@ class TreeNodeConfig(TypedDict):
         List[ConditionConfig]
     ]  # 仅作记录用于同步前端可视化编排需要，执行过程中条件判断是根据边 (Edge) 的 condition 字段 来决定的
     input_config: TreeInputConfigDict
+    # 新增：节点在可视化编辑器中的位置信息
+    position: NotRequired[Dict[str, float]]  # {"x": float, "y": float}
 
 
 class TreeEdgeConfig(TypedDict):
