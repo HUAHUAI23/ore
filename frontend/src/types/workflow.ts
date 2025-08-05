@@ -49,6 +49,8 @@ export interface TreeNodeConfig {
   node_type: string // NodeType枚举值的字符串形式
   conditions?: ConditionConfig[] // 节点的输出条件配置
   input_config: TreeInputConfig // 节点的输入配置
+  // 新增：节点在可视化编辑器中的位置信息
+  position?: { x: number; y: number }
 }
 
 // 树形边配置类型

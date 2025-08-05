@@ -134,7 +134,7 @@ export function WorkflowEmptyState({ onCreateWorkflow }: WorkflowEmptyStateProps
                 { icon: Workflow, text: '可视化流程设计' },
                 { icon: Sparkles, text: 'AI 驱动的智能节点' },
                 { icon: ArrowRight, text: '实时执行监控' }
-              ].map((feature, index) => (
+              ].map((feature, _index) => (
                 <motion.div
                   key={feature.text}
                   variants={itemVariants}

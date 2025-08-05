@@ -101,6 +101,7 @@ Issues = "https://github.com/HUAHUAI23/ore/issues"
 [project.scripts]
 workflow-engine = "workflow_engine.examples.tree_workflow:cli_main"
 workflow-server = "backend.cli:start_server"
+dev-db = "backend.scripts.dbUtils:cli"
 
 # 包发现配置
 [tool.setuptools.packages.find]

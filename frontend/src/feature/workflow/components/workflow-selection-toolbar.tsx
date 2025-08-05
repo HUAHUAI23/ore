@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2, Copy, Settings } from 'lucide-react'
 import { useReactFlow } from '@xyflow/react'
+import { AnimatePresence,motion } from 'framer-motion'
+import { Copy, Settings,Trash2 } from 'lucide-react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
 import { useWorkflowEditorStore } from '@/stores/workflow-editor'
 
 interface WorkflowSelectionToolbarProps {

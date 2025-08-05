@@ -92,19 +92,12 @@ docker-compose*.yml
 .pre-commit-config.yaml
 .flake8
 .mypy.ini
-pyproject.toml
 
 # 测试文件
 backend/tests/
 frontend/src/**/*.test.*
 frontend/src/**/*.spec.*
 
-# 前端开发文件
-frontend/public/
-frontend/src/
-frontend/package.json
-frontend/bun.lock
-frontend/tsconfig.json
-frontend/vite.config.ts
+# 前端开发工具配置文件（保留构建需要的文件）
 frontend/eslint.config.ts
 frontend/components.json

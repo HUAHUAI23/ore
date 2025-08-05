@@ -28,7 +28,12 @@ export const treeNodeConfigSchema = z.object({
   prompt: z.string(),
   node_type: z.nativeEnum(NodeType),
   conditions: z.array(conditionConfigSchema).optional(),
-  input_config: treeInputConfigSchema // 节点级别的输入配置
+  input_config: treeInputConfigSchema, // 节点级别的输入配置
+  // 新增：位置信息验证
+  position: z.object({
+    x: z.number(),
+    y: z.number()
+  }).optional()
 })
 
 // 边配置验证

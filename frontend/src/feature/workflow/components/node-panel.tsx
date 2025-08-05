@@ -2,7 +2,6 @@ import { motion } from 'framer-motion'
 import {
     GripVertical,
     Play,
-    Plus,
     Target,
     Workflow,
     X

@@ -132,6 +132,7 @@ interface WorkflowEditorState {
   setNodes: (nodes: Node[]) => void
   setEdges: (edges: Edge[]) => void
   updateNode: (nodeId: string, nodeData: Partial<TreeNodeConfig>) => void
+  updateNodePosition: (nodeId: string, position: { x: number; y: number }) => void
   addNode: (nodeType: NodeType, position?: { x: number; y: number }) => void
   removeNode: (nodeId: string) => void
   removeNodes: (nodeIds: string[]) => void
@@ -175,7 +176,22 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
           const edges = workflow.edges || []
           
           // 创建布局映射
-          const layoutNodes = createWorkflowLayout(nodeArray, edges)
+          // 优化：优先使用后端保存的位置信息，如果没有才使用智能布局
+          let layoutNodes: Array<any & { position: { x: number; y: number } }>
+          
+          // 检查是否有节点已经保存了位置信息
+          const hasStoredPositions = nodeArray.some(node => node.position && typeof node.position.x === 'number' && typeof node.position.y === 'number')
+          
+          if (hasStoredPositions) {
+            // 使用保存的位置信息
+            layoutNodes = nodeArray.map(node => ({
+              ...node,
+              position: node.position || { x: 100, y: 100 } // 如果个别节点没有位置信息，使用默认位置
+            }))
+          } else {
+            // 使用智能布局算法
+            layoutNodes = createWorkflowLayout(nodeArray, edges)
+          }
           
           const nodes = layoutNodes.map((node) => ({
             id: node.id,
@@ -262,6 +278,22 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
       // 设置节点
       setNodes: (nodes) => {
         set({ nodes, hasUnsavedChanges: true })
+      },
+      
+      // 更新节点位置（用于拖拽节点时保存位置）
+      updateNodePosition: (nodeId: string, position: { x: number; y: number }) => {
+        const { nodes } = get()
+        const updatedNodes = nodes.map(node => {
+          if (node.id === nodeId) {
+            return {
+              ...node,
+              position
+            }
+          }
+          return node
+        })
+        
+        set({ nodes: updatedNodes, hasUnsavedChanges: true })
       },
 
       // 设置边
@@ -364,7 +396,7 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
       getWorkflowData: () => {
         const { nodes, edges } = get()
         
-        // 转换节点数据为后端格式
+        // 转换节点数据为后端格式（包括位置信息）
         const backendNodes = nodes.reduce((acc, node) => {
           acc[node.id] = {
             id: node.id,
@@ -377,6 +409,11 @@ export const useWorkflowEditorStore = create<WorkflowEditorState>()(
               include_prompt: true,
               include_previous_output: true,
             },
+            // 保存位置信息
+            position: {
+              x: node.position.x,
+              y: node.position.y
+            }
           }
           return acc
         }, {} as Record<string, TreeNodeConfig>)
